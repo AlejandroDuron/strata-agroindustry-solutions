@@ -57,6 +57,25 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Auth API Endpoints
+
+- `POST /auth/register` — registra un usuario
+- `POST /auth/login` — obtiene JWT
+- `GET /users` — lista usuarios (requiere rol `admin` y token Bearer)
+- `GET /api` — documentación Swagger
+
+### Probar con Postman
+
+1. Abrir `postman_collection.json` en Postman.
+2. Ejecutar `Register User` con:
+   - `email`: `admin@example.com`
+   - `password`: `Password123!`
+   - `role`: `admin`
+3. Ejecutar `Login` con el mismo email y contraseña.
+4. Copiar el `access_token` devuelto.
+5. Configurar variable `jwt_token` en la colección con el valor del token.
+6. Ejecutar `Get Users (admin)`.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
