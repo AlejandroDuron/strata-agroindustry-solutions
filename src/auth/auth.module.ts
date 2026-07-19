@@ -1,7 +1,10 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
+import { Role } from './entities/role.entity';
+import { Permission } from './entities/permission.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
@@ -13,6 +16,7 @@ import { jwtConstants } from './constants';
   imports: [
     forwardRef(() => UsersModule),
     PassportModule,
+    TypeOrmModule.forFeature([Role, Permission]),
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '1h' },

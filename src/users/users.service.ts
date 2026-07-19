@@ -1,76 +1,97 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcryptjs';
-
-export type User = {
-  id: string;
-  email: string;
-  password: string;
-  role: 'admin' | 'user';
-};
+import { User } from './entities/user.entity';
+import { Role } from '../auth/entities/role.entity';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
+  ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+  private async getOrCreateRole(roleName: string): Promise<Role> {
+    const normalizedName = roleName.toLowerCase();
+    let role = await this.roleRepository.findOne({ where: { name: normalizedName } });
+
+    if (!role) {
+      role = this.roleRepository.create({
+        name: normalizedName,
+        description: `${normalizedName} role`,
+      });
+      role = await this.roleRepository.save(role);
+    }
+
+    return role;
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user: User = {
-      id: (this.users.length + 1).toString(),
+    const role = await this.getOrCreateRole(createUserDto.role ?? 'user');
+
+    const user = this.userRepository.create({
+      name: createUserDto.email.split('@')[0],
       email: createUserDto.email,
-      password: hashedPassword,
-      role: createUserDto.role ?? 'user',
-    };
-    this.users.push(user);
-    const { password, ...result } = user;
+      passwordHash: hashedPassword,
+      role,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+    const { passwordHash, ...result } = savedUser;
     return result;
   }
 
-  async findAll(): Promise<Array<Omit<User, 'password'>>> {
-    return this.users.map(({ password, ...user }) => user);
+  async findAll(): Promise<Array<Omit<User, 'passwordHash'>>> {
+    const users = await this.userRepository.find();
+    return users.map(({ passwordHash, ...user }) => user);
   }
 
-  async findOne(id: string): Promise<Omit<User, 'password'>> {
-    const user = this.users.find((item) => item.id === id);
+  async findOne(id: string): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.userRepository.findOne({ where: { id: Number(id) } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const { password, ...result } = user;
+
+    const { passwordHash, ...result } = user;
     return result;
   }
 
-  async findByEmail(email: string): Promise<User | undefined> {
-    return this.users.find((user) => user.email === email);
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'password'>> {
-    const index = this.users.findIndex((item) => item.id === id);
-    if (index === -1) {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.userRepository.findOne({ where: { id: Number(id) } });
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const user = this.users[index];
     if (updateUserDto.password) {
-      user.password = await bcrypt.hash(updateUserDto.password, 10);
+      user.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
     }
     if (updateUserDto.email) {
       user.email = updateUserDto.email;
     }
     if (updateUserDto.role) {
-      user.role = updateUserDto.role;
+      user.role = await this.getOrCreateRole(updateUserDto.role);
     }
 
-    this.users[index] = user;
-    const { password, ...result } = user;
+    const savedUser = await this.userRepository.save(user);
+    const { passwordHash, ...result } = savedUser;
     return result;
   }
 
   async remove(id: string): Promise<void> {
-    const index = this.users.findIndex((item) => item.id === id);
-    if (index === -1) {
+    const user = await this.userRepository.findOne({ where: { id: Number(id) } });
+    if (!user) {
       throw new NotFoundException('User not found');
     }
-    this.users.splice(index, 1);
+    await this.userRepository.remove(user);
   }
 }

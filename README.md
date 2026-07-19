@@ -71,10 +71,9 @@ $ npm run test:cov
    - `email`: `admin@example.com`
    - `password`: `Password123!`
    - `role`: `admin`
-3. Ejecutar `Login` con el mismo email y contraseña.
-4. Copiar el `access_token` devuelto.
-5. Configurar variable `jwt_token` en la colección con el valor del token.
-6. Ejecutar `Get Users (admin)`.
+3. Ejecutar `Login`.
+4. La colección guarda automáticamente el token en la variable `jwt_token`.
+5. Ejecutar `Get Users (admin)`.
 
 ## Deployment
 

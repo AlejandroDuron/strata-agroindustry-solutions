@@ -30,6 +30,19 @@
     },
     {
       "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "if (json.access_token) {",
+              "  pm.collectionVariables.set('jwt_token', json.access_token);",
+              "}"]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [

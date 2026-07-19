@@ -17,17 +17,17 @@ export class AuthService {
       return null;
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
       return null;
     }
 
-    const { password: _password, ...result } = user;
+    const { passwordHash: _passwordHash, ...result } = user;
     return result;
   }
 
-  async login(user: { id: string; email: string; role: string }) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+  async login(user: { id: number; email: string; role: { name: string } }) {
+    const payload = { sub: String(user.id), email: user.email, role: user.role?.name ?? 'user' };
     return {
       access_token: this.jwtService.sign(payload),
     };
