@@ -49,6 +49,9 @@ export class ProductionCycle {
   @Column({ type: 'float', nullable: true })
   grossMarginAtClose: number;
 
+  @Column({ type: 'float', nullable: true })
+  realYieldAtClose: number;
+
   @OneToMany(() => Input, (input) => input.productionCycle)
   inputs: Input[];
 

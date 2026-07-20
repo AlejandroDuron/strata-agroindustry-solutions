@@ -210,6 +210,7 @@ export class ProductionCycleService {
     cycle.totalRevenueAtClose = totalRevenue;
     cycle.totalCostAtClose = totalCost;
     cycle.grossMarginAtClose = grossMargin;
+    cycle.realYieldAtClose = realYield;
     cycle.status = 'CLOSED';
 
     const savedCycle = await this.cycleRepo.save(cycle);
