@@ -1,26 +1,93 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Field } from './entities/field.entity';
+import { ProductionCycle } from '../production-cycle/entities/production-cycle.entity';
 import { CreateFieldDto } from './dto/create-field.dto';
 import { UpdateFieldDto } from './dto/update-field.dto';
+import { FarmsService } from '../farms/farms.service';
 
 @Injectable()
 export class FieldsService {
-  create(createFieldDto: CreateFieldDto) {
-    return 'This action adds a new field';
+  constructor(
+    @InjectRepository(Field)
+    private readonly fieldRepository: Repository<Field>,
+
+    @InjectRepository(ProductionCycle)
+    private readonly cycleRepository: Repository<ProductionCycle>,
+
+    private readonly farmsService: FarmsService,
+  ) { }
+
+  async create(dto: CreateFieldDto): Promise<Field> {
+    await this.farmsService.findActiveOrThrow(dto.farmId);
+
+    const field = this.fieldRepository.create(dto);
+    return this.fieldRepository.save(field);
   }
 
-  findAll() {
-    return `This action returns all fields`;
+  async findAllByFarm(farmId: number): Promise<Field[]> {
+    return this.fieldRepository.find({
+      where: { farmId },
+      order: { id: 'ASC' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} field`;
+  async findOneOrThrow(id: number): Promise<Field> {
+    const field = await this.fieldRepository.findOne({
+      where: { id },
+      withDeleted: true,
+      relations: { farm: true },
+    });
+
+    if (!field) {
+      throw new NotFoundException(`No se encontró un lote con el id ${id}`);
+    }
+
+    return field;
   }
 
-  update(id: number, updateFieldDto: UpdateFieldDto) {
-    return `This action updates a #${id} field`;
+  async update(id: number, dto: UpdateFieldDto): Promise<Field> {
+    const field = await this.findNonDeletedOrThrow(id);
+
+    if (dto.area !== undefined && dto.area !== field.area) {
+      await this.throwIfHasOpenCycles(id);
+    }
+
+    Object.assign(field, dto);
+    return this.fieldRepository.save(field);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} field`;
+  async remove(id: number): Promise<Field> {
+    const field = await this.findNonDeletedOrThrow(id);
+    await this.fieldRepository.softRemove(field);
+    return field;
+  }
+
+  private async findNonDeletedOrThrow(id: number): Promise<Field> {
+    const field = await this.fieldRepository.findOne({ where: { id } });
+
+    if (!field) {
+      throw new NotFoundException(`No se encontró un lote con el id ${id}`);
+    }
+
+    return field;
+  }
+
+  private async throwIfHasOpenCycles(fieldId: number): Promise<void> {
+    const openCycleCount = await this.cycleRepository.count({
+      where: { field: { id: fieldId }, status: 'OPEN' },
+    });
+
+    if (openCycleCount > 0) {
+      throw new ConflictException(
+        'No se puede modificar el área mientras existan ciclos productivos abiertos. ' +
+        'El costo por manzana depende de este valor.',
+      );
+    }
   }
 }
