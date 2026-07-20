@@ -1,34 +1,77 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductionCycleService } from './production-cycle.service';
 import { CreateProductionCycleDto } from './dto/create-production-cycle.dto';
 import { UpdateProductionCycleDto } from './dto/update-production-cycle.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('Production Cycles')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('production-cycle')
 export class ProductionCycleController {
-  constructor(private readonly productionCycleService: ProductionCycleService) {}
+  constructor(
+    private readonly productionCycleService: ProductionCycleService,
+  ) {}
 
   @Post()
-  create(@Body() createProductionCycleDto: CreateProductionCycleDto) {
-    return this.productionCycleService.create(createProductionCycleDto);
+  @ApiOperation({ summary: 'Open a new production cycle' })
+  @ApiResponse({ status: 201, description: 'Cycle created successfully' })
+  create(@Body() createDto: CreateProductionCycleDto) {
+    return this.productionCycleService.create(createDto);
   }
 
   @Get()
+  @ApiOperation({ summary: 'List all production cycles' })
   findAll() {
     return this.productionCycleService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productionCycleService.findOne(+id);
+  @ApiOperation({ summary: 'Get a production cycle by ID' })
+  @ApiResponse({ status: 404, description: 'Cycle not found' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productionCycleService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductionCycleDto: UpdateProductionCycleDto) {
-    return this.productionCycleService.update(+id, updateProductionCycleDto);
+  @ApiOperation({ summary: 'Update a production cycle' })
+  @ApiResponse({ status: 400, description: 'Cannot modify a closed cycle' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UpdateProductionCycleDto,
+  ) {
+    return this.productionCycleService.update(id, updateDto);
+  }
+
+  @Patch(':id/close')
+  @ApiOperation({
+    summary: 'Close a production cycle',
+    description:
+      'Validates at least one harvest exists, calculates real yield vs estimated, gross margin, and updates status to CLOSED.',
+  })
+  @ApiResponse({ status: 200, description: 'Cycle closed successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cycle cannot be closed (no harvests or already closed)',
+  })
+  close(@Param('id', ParseIntPipe) id: number) {
+    return this.productionCycleService.close(id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productionCycleService.remove(+id);
+  @ApiOperation({ summary: 'Delete a production cycle' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.productionCycleService.remove(id);
   }
 }
