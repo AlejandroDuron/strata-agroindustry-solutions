@@ -33,7 +33,7 @@ export class FarmsService {
     });
 
     if (!farm) {
-      throw new NotFoundException(`No se encontró una finca con el id ${id}`);
+      throw new NotFoundException(`Farm with id ${id} not found`);
     }
 
     return farm;
@@ -61,7 +61,7 @@ export class FarmsService {
 
     if (!farm) {
       throw new NotFoundException(
-        `No se encontró una finca activa con el id ${id}`,
+        `Active farm with id ${id} not found`,
       );
     }
 
@@ -72,7 +72,7 @@ export class FarmsService {
     const farm = await this.farmRepository.findOne({ where: { id } });
 
     if (!farm) {
-      throw new NotFoundException(`No se encontró una finca con el id ${id}`);
+      throw new NotFoundException(`Farm with id ${id} not found`);
     }
 
     return farm;
@@ -86,7 +86,7 @@ export class FarmsService {
 
     if (existing) {
       throw new ConflictException(
-        `Ya existe una finca registrada con el nombre "${name}"`,
+        `A farm with the name "${name}" already exists`,
       );
     }
   }

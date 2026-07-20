@@ -15,41 +15,41 @@ import { FarmsService } from './farms.service';
 import { CreateFarmDto } from './dto/create-farm.dto';
 import { UpdateFarmDto } from './dto/update-farm.dto';
 
-@ApiTags('Fincas')
+@ApiTags('Farms')
 @Controller('farms')
 export class FarmsController {
   constructor(private readonly farmsService: FarmsService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Registrar una nueva finca' })
-  @ApiResponse({ status: 201, description: 'Finca creada' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 409, description: 'Nombre duplicado' })
+  @ApiOperation({ summary: 'Register a new farm' })
+  @ApiResponse({ status: 201, description: 'Farm created' })
+  @ApiResponse({ status: 400, description: 'Invalid data' })
+  @ApiResponse({ status: 409, description: 'Duplicate name' })
   create(@Body() createFarmDto: CreateFarmDto) {
     return this.farmsService.create(createFarmDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar fincas activas' })
-  @ApiResponse({ status: 200, description: 'Lista de fincas activas' })
+  @ApiOperation({ summary: 'List active farms' })
+  @ApiResponse({ status: 200, description: 'List of active farms' })
   findAll() {
     return this.farmsService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Consultar finca por ID (incluye eliminadas)' })
-  @ApiResponse({ status: 200, description: 'Detalle de la finca' })
-  @ApiResponse({ status: 404, description: 'Finca no encontrada' })
+  @ApiOperation({ summary: 'Get farm by ID (includes deleted)' })
+  @ApiResponse({ status: 200, description: 'Farm details' })
+  @ApiResponse({ status: 404, description: 'Farm not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.farmsService.findOneOrThrow(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar datos de una finca' })
-  @ApiResponse({ status: 200, description: 'Finca actualizada' })
-  @ApiResponse({ status: 404, description: 'Finca no encontrada' })
-  @ApiResponse({ status: 409, description: 'Nombre duplicado' })
+  @ApiOperation({ summary: 'Update farm data' })
+  @ApiResponse({ status: 200, description: 'Farm updated' })
+  @ApiResponse({ status: 404, description: 'Farm not found' })
+  @ApiResponse({ status: 409, description: 'Duplicate name' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateFarmDto: UpdateFarmDto,
@@ -58,9 +58,9 @@ export class FarmsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Desactivar finca (soft delete)' })
-  @ApiResponse({ status: 200, description: 'Finca desactivada' })
-  @ApiResponse({ status: 404, description: 'Finca no encontrada' })
+  @ApiOperation({ summary: 'Deactivate farm (soft delete)' })
+  @ApiResponse({ status: 200, description: 'Farm deactivated' })
+  @ApiResponse({ status: 404, description: 'Farm not found' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.farmsService.remove(id);
   }

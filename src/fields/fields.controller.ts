@@ -17,42 +17,42 @@ import { FieldsService } from './fields.service';
 import { CreateFieldDto } from './dto/create-field.dto';
 import { UpdateFieldDto } from './dto/update-field.dto';
 
-@ApiTags('Lotes')
+@ApiTags('Fields')
 @Controller('fields')
 export class FieldsController {
   constructor(private readonly fieldsService: FieldsService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Registrar un lote en una finca' })
-  @ApiResponse({ status: 201, description: 'Lote creado' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Finca no encontrada o eliminada' })
+  @ApiOperation({ summary: 'Register a field in a farm' })
+  @ApiResponse({ status: 201, description: 'Field created' })
+  @ApiResponse({ status: 400, description: 'Invalid data' })
+  @ApiResponse({ status: 404, description: 'Farm not found or deleted' })
   create(@Body() createFieldDto: CreateFieldDto) {
     return this.fieldsService.create(createFieldDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar lotes activos de una finca' })
+  @ApiOperation({ summary: 'List active fields of a farm' })
   @ApiQuery({ name: 'farmId', type: Number, required: true })
-  @ApiResponse({ status: 200, description: 'Lista de lotes activos' })
+  @ApiResponse({ status: 200, description: 'List of active fields' })
   findAll(@Query('farmId', ParseIntPipe) farmId: number) {
     return this.fieldsService.findAllByFarm(farmId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Consultar lote por ID (incluye eliminados)' })
-  @ApiResponse({ status: 200, description: 'Detalle del lote' })
-  @ApiResponse({ status: 404, description: 'Lote no encontrado' })
+  @ApiOperation({ summary: 'Get field by ID (includes deleted)' })
+  @ApiResponse({ status: 200, description: 'Field details' })
+  @ApiResponse({ status: 404, description: 'Field not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.fieldsService.findOneOrThrow(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar datos de un lote' })
-  @ApiResponse({ status: 200, description: 'Lote actualizado' })
-  @ApiResponse({ status: 404, description: 'Lote no encontrado' })
-  @ApiResponse({ status: 409, description: 'Ciclos abiertos impiden cambio de área' })
+  @ApiOperation({ summary: 'Update field data' })
+  @ApiResponse({ status: 200, description: 'Field updated' })
+  @ApiResponse({ status: 404, description: 'Field not found' })
+  @ApiResponse({ status: 409, description: 'Open cycles prevent area change' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateFieldDto: UpdateFieldDto,
@@ -61,9 +61,9 @@ export class FieldsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Desactivar lote' })
-  @ApiResponse({ status: 200, description: 'Lote desactivado' })
-  @ApiResponse({ status: 404, description: 'Lote no encontrado' })
+  @ApiOperation({ summary: 'Deactivate field (soft delete)' })
+  @ApiResponse({ status: 200, description: 'Field deactivated' })
+  @ApiResponse({ status: 404, description: 'Field not found' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.fieldsService.remove(id);
   }

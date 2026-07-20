@@ -145,6 +145,7 @@ export class ProductionCycleService {
   async close(id: number): Promise<{
     cycle: ProductionCycle;
     yieldAlert: boolean;
+    alertMessage: string | null;
     realYield: number;
     estimatedYield: number;
     historicalAvgYield: number | null;
@@ -199,10 +200,15 @@ export class ProductionCycleService {
     );
 
     let yieldAlert = false;
+    let alertMessage: string | null = null;
     if (historicalAvgYield !== null && historicalAvgYield > 0) {
       const threshold = historicalAvgYield * 0.8; // 20% below
       if (realYield < threshold) {
         yieldAlert = true;
+        const dropPercent = (
+          ((historicalAvgYield - realYield) / historicalAvgYield) * 100
+        ).toFixed(1);
+        alertMessage = `The yield of field "${cycle.field.name}" has dropped ${dropPercent}% compared to its historical average (${historicalAvgYield.toFixed(2)} → ${realYield.toFixed(2)})`;
       }
     }
 
@@ -218,6 +224,7 @@ export class ProductionCycleService {
     return {
       cycle: savedCycle,
       yieldAlert,
+      alertMessage,
       realYield,
       estimatedYield: cycle.estimatedYield,
       historicalAvgYield,

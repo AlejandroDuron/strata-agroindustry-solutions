@@ -45,7 +45,7 @@ export class FieldsService {
     });
 
     if (!field) {
-      throw new NotFoundException(`No se encontró un lote con el id ${id}`);
+      throw new NotFoundException(`Field with id ${id} not found`);
     }
 
     return field;
@@ -72,7 +72,7 @@ export class FieldsService {
     const field = await this.fieldRepository.findOne({ where: { id } });
 
     if (!field) {
-      throw new NotFoundException(`No se encontró un lote con el id ${id}`);
+      throw new NotFoundException(`Field with id ${id} not found`);
     }
 
     return field;
@@ -85,8 +85,8 @@ export class FieldsService {
 
     if (openCycleCount > 0) {
       throw new ConflictException(
-        'No se puede modificar el área mientras existan ciclos productivos abiertos. ' +
-        'El costo por manzana depende de este valor.',
+        'Cannot modify the area while open production cycles exist. ' +
+        'The cost per area depends on this value.',
       );
     }
   }

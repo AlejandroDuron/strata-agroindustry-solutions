@@ -3,14 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFarmDto {
   @ApiProperty({ example: 'Finca El Roble' })
-  @IsNotEmpty({ message: 'El nombre de la finca es requerido' })
+  @IsNotEmpty({ message: 'Farm name is required' })
   @IsString()
-  @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
+  @MaxLength(100, { message: 'Name cannot exceed 100 characters' })
   name: string;
 
   @ApiProperty({ example: 'Santa Ana, El Salvador' })
-  @IsNotEmpty({ message: 'La ubicación de la finca es requerida' })
+  @IsNotEmpty({ message: 'Farm location is required' })
   @IsString()
-  @MaxLength(100, { message: 'La ubicación no puede exceder 100 caracteres' })
+  @MaxLength(100, { message: 'Location cannot exceed 100 characters' })
   location: string;
 }
