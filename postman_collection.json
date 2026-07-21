@@ -90,6 +90,121 @@
       ]
     },
     {
+      "name": "Production Cycles",
+      "item": [
+        {
+          "name": "Open Cycle (Create)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fieldId\": 1,\n  \"cropId\": 1,\n  \"sowingDate\": \"2026-01-15\",\n  \"expectedHarvestDate\": \"2026-06-15\",\n  \"estimatedYield\": 30\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/production-cycle",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["production-cycle"]
+            },
+            "description": "Opens a new production cycle. Only one open cycle per field is allowed."
+          }
+        },
+        {
+          "name": "List All Cycles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/production-cycle",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["production-cycle"]
+            }
+          }
+        },
+        {
+          "name": "Get Cycle by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/production-cycle/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["production-cycle", "1"]
+            },
+            "description": "Returns the cycle with all relations (field, crop, inputs, harvests, events)."
+          }
+        },
+        {
+          "name": "Update Cycle",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimatedYield\": 35\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/production-cycle/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["production-cycle", "1"]
+            },
+            "description": "Cannot modify a closed cycle."
+          }
+        },
+        {
+          "name": "Close Cycle",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/production-cycle/1/close",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["production-cycle", "1", "close"]
+            },
+            "description": "Closes the cycle. Requires at least 1 harvest. Calculates revenue, costs, gross margin, real yield, and generates yield alert if below 20% of historical average."
+          }
+        },
+        {
+          "name": "Delete Cycle",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/production-cycle/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["production-cycle", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Persona 4 — Insumos",
       "item": [
         {
