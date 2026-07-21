@@ -1,26 +1,83 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CropEvent } from './entities/crop-event.entity';
+import { ProductionCycle } from '../production-cycle/entities/production-cycle.entity';
 import { CreateCropEventDto } from './dto/create-crop-event.dto';
 import { UpdateCropEventDto } from './dto/update-crop-event.dto';
 
 @Injectable()
 export class CropEventsService {
-  create(createCropEventDto: CreateCropEventDto) {
-    return 'This action adds a new cropEvent';
+  constructor(
+    @InjectRepository(CropEvent)
+    private readonly eventRepo: Repository<CropEvent>,
+    @InjectRepository(ProductionCycle)
+    private readonly cycleRepo: Repository<ProductionCycle>,
+  ) {}
+
+  private async getCycleAndValidateOpen(cycleId: number): Promise<ProductionCycle> {
+    const cycle = await this.cycleRepo.findOne({
+      where: { id: cycleId },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException(`Production cycle with ID ${cycleId} not found`);
+    }
+
+    if (cycle.status === 'CLOSED') {
+      throw new BadRequestException(`Cannot perform operation: Production cycle with ID ${cycleId} is CLOSED`);
+    }
+
+    return cycle;
   }
 
-  findAll() {
-    return `This action returns all cropEvents`;
+  async create(cycleId: number, dto: CreateCropEventDto): Promise<CropEvent> {
+    await this.getCycleAndValidateOpen(cycleId);
+
+    const event = this.eventRepo.create({
+      ...dto,
+      productionCycleId: cycleId,
+    });
+
+    return this.eventRepo.save(event);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} cropEvent`;
+  async findAll(cycleId: number): Promise<CropEvent[]> {
+    const cycle = await this.cycleRepo.findOne({ where: { id: cycleId } });
+    if (!cycle) {
+      throw new NotFoundException(`Production cycle with ID ${cycleId} not found`);
+    }
+
+    return this.eventRepo.find({
+      where: { productionCycleId: cycleId },
+      order: { eventDate: 'ASC', id: 'ASC' },
+    });
   }
 
-  update(id: number, updateCropEventDto: UpdateCropEventDto) {
-    return `This action updates a #${id} cropEvent`;
+  async findOne(cycleId: number, id: number): Promise<CropEvent> {
+    const event = await this.eventRepo.findOne({
+      where: { id, productionCycleId: cycleId },
+    });
+
+    if (!event) {
+      throw new NotFoundException(`Crop event with ID ${id} not found in production cycle ${cycleId}`);
+    }
+
+    return event;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} cropEvent`;
+  async update(cycleId: number, id: number, dto: UpdateCropEventDto): Promise<CropEvent> {
+    await this.getCycleAndValidateOpen(cycleId);
+    const event = await this.findOne(cycleId, id);
+
+    Object.assign(event, dto);
+    return this.eventRepo.save(event);
+  }
+
+  async remove(cycleId: number, id: number): Promise<void> {
+    await this.getCycleAndValidateOpen(cycleId);
+    const event = await this.findOne(cycleId, id);
+
+    await this.eventRepo.remove(event);
   }
 }
