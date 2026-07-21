@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -14,7 +15,20 @@ import { HarvestsModule } from './harvests/harvests.module';
 import { ReportsModule } from './reports/reports.module';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, UsersModule, FarmsModule, FieldsModule, CropsModule, ProductionCycleModule, InputsModule, CropEventsModule, HarvestsModule, ReportsModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    DatabaseModule,
+    AuthModule,
+    UsersModule,
+    FarmsModule,
+    FieldsModule,
+    CropsModule,
+    ProductionCycleModule,
+    InputsModule,
+    CropEventsModule,
+    HarvestsModule,
+    ReportsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
