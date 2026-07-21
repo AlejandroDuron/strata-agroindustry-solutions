@@ -26,10 +26,10 @@ export class InputsController {
 
   @Post()
   @Roles('admin', 'agronomo', 'operador', 'capataz')
-  @ApiOperation({ summary: 'Registrar un nuevo insumo para un ciclo productivo' })
-  @ApiResponse({ status: 201, description: 'Insumo creado correctamente.' })
-  @ApiResponse({ status: 400, description: 'Ciclo productivo cerrado o datos inválidos.' })
-  @ApiResponse({ status: 404, description: 'Ciclo productivo no encontrado.' })
+  @ApiOperation({ summary: 'Register a new input for a production cycle' })
+  @ApiResponse({ status: 201, description: 'Input created successfully.' })
+  @ApiResponse({ status: 400, description: 'Production cycle is closed or invalid data.' })
+  @ApiResponse({ status: 404, description: 'Production cycle not found.' })
   create(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Body() createInputDto: CreateInputDto,
@@ -38,17 +38,17 @@ export class InputsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos los insumos asociados a un ciclo productivo' })
-  @ApiResponse({ status: 200, description: 'Listado de insumos obtenido.' })
-  @ApiResponse({ status: 404, description: 'Ciclo productivo no encontrado.' })
+  @ApiOperation({ summary: 'List all inputs for a production cycle' })
+  @ApiResponse({ status: 200, description: 'List of inputs retrieved.' })
+  @ApiResponse({ status: 404, description: 'Production cycle not found.' })
   findAll(@Param('cycleId', ParseIntPipe) cycleId: number) {
     return this.inputsService.findAll(cycleId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener el detalle de un insumo específico' })
-  @ApiResponse({ status: 200, description: 'Insumo encontrado.' })
-  @ApiResponse({ status: 404, description: 'Insumo o ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Get details of a specific input' })
+  @ApiResponse({ status: 200, description: 'Input found.' })
+  @ApiResponse({ status: 404, description: 'Input or cycle not found.' })
   findOne(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -58,10 +58,10 @@ export class InputsController {
 
   @Patch(':id')
   @Roles('admin', 'agronomo')
-  @ApiOperation({ summary: 'Actualizar la información de un insumo (recalcula el costo del ciclo)' })
-  @ApiResponse({ status: 200, description: 'Insumo actualizado y costo recalculado.' })
-  @ApiResponse({ status: 400, description: 'Ciclo productivo cerrado o datos inválidos.' })
-  @ApiResponse({ status: 404, description: 'Insumo o ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Update an input (recalculates cycle cost)' })
+  @ApiResponse({ status: 200, description: 'Input updated and cost recalculated.' })
+  @ApiResponse({ status: 400, description: 'Production cycle is closed or invalid data.' })
+  @ApiResponse({ status: 404, description: 'Input or cycle not found.' })
   update(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -72,10 +72,10 @@ export class InputsController {
 
   @Delete(':id')
   @Roles('admin', 'agronomo')
-  @ApiOperation({ summary: 'Eliminar un insumo de un ciclo productivo (recalcula el costo del ciclo)' })
-  @ApiResponse({ status: 200, description: 'Insumo eliminado y costo recalculado.' })
-  @ApiResponse({ status: 400, description: 'Ciclo productivo cerrado.' })
-  @ApiResponse({ status: 404, description: 'Insumo o ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Delete an input from a production cycle (recalculates cycle cost)' })
+  @ApiResponse({ status: 200, description: 'Input deleted and cost recalculated.' })
+  @ApiResponse({ status: 400, description: 'Production cycle is closed.' })
+  @ApiResponse({ status: 404, description: 'Input or cycle not found.' })
   remove(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Param('id', ParseIntPipe) id: number,

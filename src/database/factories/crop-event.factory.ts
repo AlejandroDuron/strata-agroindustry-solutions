@@ -1,6 +1,6 @@
 import { CropEvent } from '../../crop-events/entities/crop-event.entity';
 
-const EVENT_TYPES = ['irrigation', 'fumigation', 'disease', 'pruning', 'fertilization'];
+const EVENT_TYPES = ['IRRIGATION', 'FUMIGATION', 'DISEASE_DETECTED', 'PRUNING', 'FERTILIZATION'];
 
 const DESCRIPTIONS = [
   'Routine irrigation cycle',

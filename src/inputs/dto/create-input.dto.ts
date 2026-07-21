@@ -8,7 +8,7 @@ export class CreateInputDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ enum: InputType, example: InputType.FERTILIZANTE })
+  @ApiProperty({ enum: InputType, example: InputType.FERTILIZER })
   @IsEnum(InputType)
   type: InputType;
 
@@ -32,7 +32,7 @@ export class CreateInputDto {
   @IsString()
   applicationDate: string;
 
-  @ApiProperty({ example: 'Aplicación matutina', required: false })
+  @ApiProperty({ example: 'Morning application', required: false })
   @IsOptional()
   @IsString()
   notes?: string;

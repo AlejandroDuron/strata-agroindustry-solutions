@@ -10,24 +10,18 @@ import {
 import { ProductionCycle } from '../../production-cycle/entities/production-cycle.entity';
 
 export enum EventType {
-  RIEGO = 'RIEGO',
-  FUMIGACION = 'FUMIGACION',
-  ENFERMEDAD_DETECTADA = 'ENFERMEDAD_DETECTADA',
-  PODA = 'PODA',
-  OTRO = 'OTRO',
-  
-  // Seed factory compatibility values
-  irrigation = 'irrigation',
-  fumigation = 'fumigation',
-  disease = 'disease',
-  pruning = 'pruning',
-  fertilization = 'fertilization',
+  IRRIGATION = 'IRRIGATION',
+  FUMIGATION = 'FUMIGATION',
+  DISEASE_DETECTED = 'DISEASE_DETECTED',
+  PRUNING = 'PRUNING',
+  FERTILIZATION = 'FERTILIZATION',
+  OTHER = 'OTHER',
 }
 
 export enum Severity {
-  BAJA = 'BAJA',
-  MEDIA = 'MEDIA',
-  ALTA = 'ALTA',
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
 }
 
 @Entity()
@@ -44,7 +38,7 @@ export class CropEvent {
 
   @Column({
     type: 'varchar',
-    default: EventType.OTRO,
+    default: EventType.OTHER,
   })
   eventType: EventType | string;
 

@@ -19,12 +19,12 @@ export class HarvestsService {
     private readonly cycleRepo: Repository<ProductionCycle>,
   ) {}
 
-  async create(dto: CreateHarvestDto): Promise<Harvest> {
-    const cycle = await this.cycleRepo.findOneBy({ id: dto.cycleId });
+  private async getCycleAndValidateOpen(cycleId: number): Promise<ProductionCycle> {
+    const cycle = await this.cycleRepo.findOneBy({ id: cycleId });
 
     if (!cycle) {
       throw new NotFoundException(
-        `Production cycle with id ${dto.cycleId} not found`,
+        `Production cycle with id ${cycleId} not found`,
       );
     }
 
@@ -34,8 +34,14 @@ export class HarvestsService {
       );
     }
 
+    return cycle;
+  }
+
+  async create(dto: CreateHarvestDto): Promise<Harvest> {
+    await this.getCycleAndValidateOpen(dto.cycleId);
+
     const harvest = this.harvestRepo.create({
-      productionCycle: cycle,
+      productionCycleId: dto.cycleId,
       quantityObtained: dto.quantityObtained,
       quality: dto.quality,
       unitSalePrice: dto.unitSalePrice,
@@ -47,7 +53,7 @@ export class HarvestsService {
 
   async findAllByCycle(cycleId: number): Promise<Harvest[]> {
     return this.harvestRepo.find({
-      where: { productionCycle: { id: cycleId } },
+      where: { productionCycleId: cycleId },
       order: { id: 'ASC' },
     });
   }
@@ -73,14 +79,7 @@ export class HarvestsService {
   }
 
   async update(id: number, dto: UpdateHarvestDto): Promise<Harvest> {
-    const harvest = await this.harvestRepo.findOne({
-      where: { id },
-      relations: { productionCycle: true },
-    });
-
-    if (!harvest) {
-      throw new NotFoundException(`Harvest with id ${id} not found`);
-    }
+    const harvest = await this.findOne(id);
 
     if (harvest.productionCycle.status === 'CLOSED') {
       throw new BadRequestException(
@@ -93,14 +92,7 @@ export class HarvestsService {
   }
 
   async remove(id: number): Promise<void> {
-    const harvest = await this.harvestRepo.findOne({
-      where: { id },
-      relations: { productionCycle: true },
-    });
-
-    if (!harvest) {
-      throw new NotFoundException(`Harvest with id ${id} not found`);
-    }
+    const harvest = await this.findOne(id);
 
     if (harvest.productionCycle.status === 'CLOSED') {
       throw new BadRequestException(

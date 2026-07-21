@@ -12,7 +12,10 @@ export class Harvest {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => ProductionCycle, (cycle) => cycle.harvests)
+  @Column({ name: 'cycle_id' })
+  productionCycleId: number;
+
+  @ManyToOne(() => ProductionCycle, (cycle) => cycle.harvests, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cycle_id' })
   productionCycle: ProductionCycle;
 

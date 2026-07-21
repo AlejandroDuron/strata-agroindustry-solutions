@@ -612,6 +612,103 @@
       ]
     },
     {
+      "name": "Harvests",
+      "item": [
+        {
+          "name": "Create Harvest",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cycleId\": 2,\n  \"quantityObtained\": 25.5,\n  \"quality\": \"A\",\n  \"unitSalePrice\": 120.0,\n  \"quantitySold\": 22.0\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/harvests",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["harvests"]
+            },
+            "description": "Register a harvest for a production cycle."
+          }
+        },
+        {
+          "name": "List Harvests",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/harvests?cycleId=2",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["harvests"],
+              "query": [{ "key": "cycleId", "value": "2" }]
+            }
+          }
+        },
+        {
+          "name": "Get Harvest by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/harvests/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["harvests", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Harvest",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantitySold\": 24.0\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/harvests/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["harvests", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Harvest",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/harvests/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["harvests", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Crop Events",
       "item": [
         {
@@ -630,7 +727,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eventType\": \"RIEGO\",\n  \"eventDate\": \"2026-07-21\",\n  \"description\": \"Morning drip irrigation north sector\",\n  \"severity\": \"LOW\"\n}"
+              "raw": "{\n  \"eventType\": \"IRRIGATION\",\n  \"eventDate\": \"2026-07-21\",\n  \"description\": \"Morning drip irrigation north sector\",\n  \"severity\": \"LOW\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/events",

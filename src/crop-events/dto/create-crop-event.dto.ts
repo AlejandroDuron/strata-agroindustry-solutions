@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { EventType, Severity } from '../entities/crop-event.entity';
 
 export class CreateCropEventDto {
-  @ApiProperty({ enum: EventType, example: EventType.RIEGO })
+  @ApiProperty({ enum: EventType, example: EventType.IRRIGATION })
   @IsEnum(EventType)
   eventType: EventType;
 
@@ -12,12 +12,12 @@ export class CreateCropEventDto {
   @IsString()
   eventDate: string;
 
-  @ApiProperty({ example: 'Riego por goteo nocturno de 2 horas', required: false })
+  @ApiProperty({ example: 'Nighttime drip irrigation for 2 hours', required: false })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ enum: Severity, example: Severity.MEDIA, required: false })
+  @ApiProperty({ enum: Severity, example: Severity.MEDIUM, required: false })
   @IsOptional()
   @IsEnum(Severity)
   severity?: Severity;

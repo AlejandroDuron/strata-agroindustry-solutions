@@ -17,9 +17,15 @@ export class ProductionCycle {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'field_id' })
+  fieldId: number;
+
   @ManyToOne(() => Field, (field) => field.productionCycles)
   @JoinColumn({ name: 'field_id' })
   field: Field;
+
+  @Column({ name: 'crop_id' })
+  cropId: number;
 
   @ManyToOne(() => Crop, (crop) => crop.productionCycles)
   @JoinColumn({ name: 'crop_id' })

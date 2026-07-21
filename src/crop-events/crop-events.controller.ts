@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-@ApiTags('crop-events')
+@ApiTags('Crop Events')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('production-cycles/:cycleId/events')
@@ -26,10 +26,10 @@ export class CropEventsController {
 
   @Post()
   @Roles('admin', 'agronomo', 'operador', 'capataz')
-  @ApiOperation({ summary: 'Registrar un nuevo evento en el ciclo productivo' })
-  @ApiResponse({ status: 201, description: 'Evento registrado correctamente.' })
-  @ApiResponse({ status: 400, description: 'Ciclo cerrado o datos inválidos.' })
-  @ApiResponse({ status: 404, description: 'Ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Register a new event in the production cycle' })
+  @ApiResponse({ status: 201, description: 'Event registered successfully.' })
+  @ApiResponse({ status: 400, description: 'Cycle is closed or invalid data.' })
+  @ApiResponse({ status: 404, description: 'Cycle not found.' })
   create(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Body() createCropEventDto: CreateCropEventDto,
@@ -38,17 +38,17 @@ export class CropEventsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos los eventos de un ciclo productivo' })
-  @ApiResponse({ status: 200, description: 'Listado de eventos obtenido.' })
-  @ApiResponse({ status: 404, description: 'Ciclo no encontrado.' })
+  @ApiOperation({ summary: 'List all events of a production cycle' })
+  @ApiResponse({ status: 200, description: 'List of events retrieved.' })
+  @ApiResponse({ status: 404, description: 'Cycle not found.' })
   findAll(@Param('cycleId', ParseIntPipe) cycleId: number) {
     return this.cropEventsService.findAll(cycleId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener un evento específico por ID' })
-  @ApiResponse({ status: 200, description: 'Evento encontrado.' })
-  @ApiResponse({ status: 404, description: 'Evento o ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Get a specific event by ID' })
+  @ApiResponse({ status: 200, description: 'Event found.' })
+  @ApiResponse({ status: 404, description: 'Event or cycle not found.' })
   findOne(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -58,10 +58,10 @@ export class CropEventsController {
 
   @Patch(':id')
   @Roles('admin', 'agronomo')
-  @ApiOperation({ summary: 'Actualizar un evento registrado' })
-  @ApiResponse({ status: 200, description: 'Evento actualizado correctamente.' })
-  @ApiResponse({ status: 400, description: 'Ciclo cerrado o datos inválidos.' })
-  @ApiResponse({ status: 404, description: 'Evento o ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Update a registered event' })
+  @ApiResponse({ status: 200, description: 'Event updated successfully.' })
+  @ApiResponse({ status: 400, description: 'Cycle is closed or invalid data.' })
+  @ApiResponse({ status: 404, description: 'Event or cycle not found.' })
   update(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -72,10 +72,10 @@ export class CropEventsController {
 
   @Delete(':id')
   @Roles('admin', 'agronomo')
-  @ApiOperation({ summary: 'Eliminar un evento' })
-  @ApiResponse({ status: 200, description: 'Evento eliminado correctamente.' })
-  @ApiResponse({ status: 400, description: 'Ciclo cerrado.' })
-  @ApiResponse({ status: 404, description: 'Evento o ciclo no encontrado.' })
+  @ApiOperation({ summary: 'Delete an event' })
+  @ApiResponse({ status: 200, description: 'Event deleted successfully.' })
+  @ApiResponse({ status: 400, description: 'Cycle is closed.' })
+  @ApiResponse({ status: 404, description: 'Event or cycle not found.' })
   remove(
     @Param('cycleId', ParseIntPipe) cycleId: number,
     @Param('id', ParseIntPipe) id: number,

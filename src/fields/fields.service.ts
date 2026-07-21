@@ -80,7 +80,7 @@ export class FieldsService {
 
   private async throwIfHasOpenCycles(fieldId: number): Promise<void> {
     const openCycleCount = await this.cycleRepository.count({
-      where: { field: { id: fieldId }, status: 'OPEN' },
+      where: { fieldId: fieldId, status: 'OPEN' },
     });
 
     if (openCycleCount > 0) {

@@ -10,10 +10,10 @@ import {
 import { ProductionCycle } from '../../production-cycle/entities/production-cycle.entity';
 
 export enum InputType {
-  FERTILIZANTE = 'FERTILIZANTE',
-  PESTICIDA = 'PESTICIDA',
-  MANO_DE_OBRA = 'MANO_DE_OBRA',
-  OTRO = 'OTRO',
+  FERTILIZER = 'FERTILIZER',
+  PESTICIDE = 'PESTICIDE',
+  LABOR = 'LABOR',
+  OTHER = 'OTHER',
 }
 
 @Entity()
@@ -33,7 +33,7 @@ export class Input {
 
   @Column({
     type: 'varchar',
-    default: InputType.OTRO,
+    default: InputType.OTHER,
   })
   type: InputType;
 

@@ -41,7 +41,7 @@ export class ProductionCycleService {
 
     // Validate no other OPEN cycle exists for this field
     const existingOpenCycle = await this.cycleRepo.findOne({
-      where: { field: { id: dto.fieldId }, status: 'OPEN' },
+      where: { fieldId: dto.fieldId, status: 'OPEN' },
     });
 
     if (existingOpenCycle) {
@@ -51,8 +51,8 @@ export class ProductionCycleService {
     }
 
     const cycle = this.cycleRepo.create({
-      field,
-      crop,
+      fieldId: dto.fieldId,
+      cropId: dto.cropId,
       sowingDate: dto.sowingDate,
       expectedHarvestDate: dto.expectedHarvestDate,
       estimatedYield: dto.estimatedYield,
@@ -103,6 +103,7 @@ export class ProductionCycleService {
           `Field with id ${dto.fieldId} not found`,
         );
       }
+      cycle.fieldId = dto.fieldId;
       cycle.field = field;
     }
 
@@ -113,6 +114,7 @@ export class ProductionCycleService {
           `Crop with id ${dto.cropId} not found`,
         );
       }
+      cycle.cropId = dto.cropId;
       cycle.crop = crop;
     }
 
@@ -240,7 +242,7 @@ export class ProductionCycleService {
     excludeCycleId: number,
   ): Promise<number | null> {
     const closedCycles = await this.cycleRepo.find({
-      where: { field: { id: fieldId }, status: 'CLOSED' },
+      where: { fieldId: fieldId, status: 'CLOSED' },
       relations: { harvests: true },
     });
 

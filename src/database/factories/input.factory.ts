@@ -1,6 +1,6 @@
 import { Input } from '../../inputs/entities/input.entity';
 
-const INPUT_TYPES = ['fertilizer', 'pesticide', 'labor', 'herbicide', 'seeds'];
+const INPUT_TYPES = ['FERTILIZER', 'PESTICIDE', 'LABOR', 'FERTILIZER', 'OTHER'];
 
 export function createInput(overrides: Partial<Input> = {}, index = 0): Partial<Input> {
   return {
