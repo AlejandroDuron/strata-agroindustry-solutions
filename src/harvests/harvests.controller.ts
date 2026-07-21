@@ -1,34 +1,76 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { HarvestsService } from './harvests.service';
 import { CreateHarvestDto } from './dto/create-harvest.dto';
 import { UpdateHarvestDto } from './dto/update-harvest.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('Harvests')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('harvests')
 export class HarvestsController {
   constructor(private readonly harvestsService: HarvestsService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Register a new harvest' })
+  @ApiResponse({ status: 201, description: 'Harvest created successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot add harvest to a closed cycle' })
+  @ApiResponse({ status: 404, description: 'Production cycle not found' })
   create(@Body() createHarvestDto: CreateHarvestDto) {
     return this.harvestsService.create(createHarvestDto);
   }
 
   @Get()
-  findAll() {
+  @ApiOperation({ summary: 'List all harvests (optionally filter by cycle)' })
+  @ApiQuery({ name: 'cycleId', required: false, type: Number })
+  findAll(@Query('cycleId') cycleId?: string) {
+    if (cycleId) {
+      return this.harvestsService.findAllByCycle(+cycleId);
+    }
     return this.harvestsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.harvestsService.findOne(+id);
+  @ApiOperation({ summary: 'Get a harvest by ID' })
+  @ApiResponse({ status: 404, description: 'Harvest not found' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.harvestsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateHarvestDto: UpdateHarvestDto) {
-    return this.harvestsService.update(+id, updateHarvestDto);
+  @ApiOperation({ summary: 'Update a harvest' })
+  @ApiResponse({ status: 400, description: 'Cannot modify harvest in a closed cycle' })
+  @ApiResponse({ status: 404, description: 'Harvest not found' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateHarvestDto: UpdateHarvestDto,
+  ) {
+    return this.harvestsService.update(id, updateHarvestDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.harvestsService.remove(+id);
+  @ApiOperation({ summary: 'Delete a harvest' })
+  @ApiResponse({ status: 400, description: 'Cannot delete harvest from a closed cycle' })
+  @ApiResponse({ status: 404, description: 'Harvest not found' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.harvestsService.remove(id);
   }
 }

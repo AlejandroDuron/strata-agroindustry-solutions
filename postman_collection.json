@@ -1,12 +1,12 @@
 {
   "info": {
     "name": "Strata Agroindustry API",
-    "description": "Colección Postman para probar auth, usuarios, insumos y eventos con JWT.",
+    "description": "Postman collection for testing the Strata Agroindustry API with JWT.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Autenticación",
+      "name": "Auth",
       "item": [
         {
           "name": "Register User",
@@ -84,6 +84,294 @@
               "host": ["localhost"],
               "port": "3000",
               "path": ["users"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Farms",
+      "item": [
+        {
+          "name": "Create Farm",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Finca El Roble\",\n  \"location\": \"Santa Ana, El Salvador\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/farms",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["farms"]
+            }
+          }
+        },
+        {
+          "name": "List Farms",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/farms",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["farms"]
+            }
+          }
+        },
+        {
+          "name": "Get Farm by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/farms/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["farms", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Farm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"Ahuachapán, El Salvador\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/farms/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["farms", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Farm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/farms/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["farms", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fields",
+      "item": [
+        {
+          "name": "Create Field",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"farmId\": 1,\n  \"name\": \"Lote La Ceiba\",\n  \"area\": 5.5\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/fields",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["fields"]
+            }
+          }
+        },
+        {
+          "name": "List Fields by Farm",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/fields?farmId=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["fields"],
+              "query": [
+                { "key": "farmId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Field by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/fields/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["fields", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Field",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"area\": 6.0\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/fields/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["fields", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Field",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/fields/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["fields", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crops",
+      "item": [
+        {
+          "name": "Create Crop",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Café\",\n  \"variety\": \"Bourbon\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/crops",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["crops"]
+            }
+          }
+        },
+        {
+          "name": "List Crops",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/crops",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["crops"]
+            }
+          }
+        },
+        {
+          "name": "Get Crop by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/crops/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["crops", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Crop",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variety\": \"Pacamara\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/crops/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["crops", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Crop",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/crops/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["crops", "1"]
             }
           }
         }
@@ -205,10 +493,10 @@
       ]
     },
     {
-      "name": "Persona 4 — Insumos",
+      "name": "Inputs",
       "item": [
         {
-          "name": "Registrar Insumo (POST)",
+          "name": "Create Input",
           "request": {
             "method": "POST",
             "header": [
@@ -223,7 +511,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Urea 46%\",\n  \"type\": \"FERTILIZANTE\",\n  \"quantity\": 10.5,\n  \"unitCost\": 15.0,\n  \"unit\": \"kg\",\n  \"applicationDate\": \"2026-07-21\",\n  \"notes\": \"Aplicación foliar matutina\"\n}"
+              "raw": "{\n  \"name\": \"Urea 46%\",\n  \"type\": \"FERTILIZER\",\n  \"quantity\": 10.5,\n  \"unitCost\": 15.0,\n  \"unit\": \"kg\",\n  \"applicationDate\": \"2026-07-21\",\n  \"notes\": \"Morning foliar application\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/inputs",
@@ -232,11 +520,11 @@
               "port": "3000",
               "path": ["production-cycles", "2", "inputs"]
             },
-            "description": "Registra un insumo y recalcula el costo del ciclo (reemplaza '2' por el cycleId que desees)."
+            "description": "Creates an input and recalculates the cycle cost (replace '2' with the desired cycleId)."
           }
         },
         {
-          "name": "Listar Insumos del Ciclo (GET)",
+          "name": "List Inputs by Cycle",
           "request": {
             "method": "GET",
             "header": [
@@ -255,7 +543,7 @@
           }
         },
         {
-          "name": "Obtener un Insumo (GET)",
+          "name": "Get Input by ID",
           "request": {
             "method": "GET",
             "header": [
@@ -274,7 +562,7 @@
           }
         },
         {
-          "name": "Actualizar Insumo (PATCH)",
+          "name": "Update Input",
           "request": {
             "method": "PATCH",
             "header": [
@@ -289,7 +577,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"quantity\": 15.0,\n  \"notes\": \"Cantidad corregida por agrónomo\"\n}"
+              "raw": "{\n  \"quantity\": 15.0,\n  \"notes\": \"Quantity corrected by agronomist\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/inputs/1",
@@ -298,11 +586,11 @@
               "port": "3000",
               "path": ["production-cycles", "2", "inputs", "1"]
             },
-            "description": "Actualiza cantidad/costo y recalcula dinámicamente el costo por manzana del ciclo."
+            "description": "Updates quantity/cost and dynamically recalculates the cost per area of the cycle."
           }
         },
         {
-          "name": "Eliminar Insumo (DELETE)",
+          "name": "Delete Input",
           "request": {
             "method": "DELETE",
             "header": [
@@ -318,16 +606,16 @@
               "port": "3000",
               "path": ["production-cycles", "2", "inputs", "1"]
             },
-            "description": "Elimina el insumo y recalcula restando su valor del costo por manzana del ciclo."
+            "description": "Deletes the input and recalculates by subtracting its value from the cost per area of the cycle."
           }
         }
       ]
     },
     {
-      "name": "Persona 4 — Eventos",
+      "name": "Crop Events",
       "item": [
         {
-          "name": "Registrar Evento (POST)",
+          "name": "Create Event",
           "request": {
             "method": "POST",
             "header": [
@@ -342,7 +630,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eventType\": \"RIEGO\",\n  \"eventDate\": \"2026-07-21\",\n  \"description\": \"Riego matutino por goteo sector norte\",\n  \"severity\": \"BAJA\"\n}"
+              "raw": "{\n  \"eventType\": \"RIEGO\",\n  \"eventDate\": \"2026-07-21\",\n  \"description\": \"Morning drip irrigation north sector\",\n  \"severity\": \"LOW\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/events",
@@ -354,7 +642,7 @@
           }
         },
         {
-          "name": "Listar Eventos del Ciclo (GET)",
+          "name": "List Events by Cycle",
           "request": {
             "method": "GET",
             "header": [
@@ -373,7 +661,7 @@
           }
         },
         {
-          "name": "Obtener un Evento (GET)",
+          "name": "Get Event by ID",
           "request": {
             "method": "GET",
             "header": [
@@ -392,7 +680,7 @@
           }
         },
         {
-          "name": "Actualizar Evento (PATCH)",
+          "name": "Update Event",
           "request": {
             "method": "PATCH",
             "header": [
@@ -407,7 +695,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"description\": \"Riego matutino extendido a 3 horas\",\n  \"resolvedAt\": \"2026-07-22\"\n}"
+              "raw": "{\n  \"description\": \"Morning irrigation extended to 3 hours\",\n  \"resolvedAt\": \"2026-07-22\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/events/1",
@@ -419,7 +707,7 @@
           }
         },
         {
-          "name": "Eliminar Evento (DELETE)",
+          "name": "Delete Event",
           "request": {
             "method": "DELETE",
             "header": [
