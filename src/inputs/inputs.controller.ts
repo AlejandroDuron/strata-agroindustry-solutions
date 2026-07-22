@@ -9,7 +9,14 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { InputsService } from './inputs.service';
 import { CreateInputDto } from './dto/create-input.dto';
 import { UpdateInputDto } from './dto/update-input.dto';
@@ -17,8 +24,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-@ApiTags('inputs')
+@ApiTags('Inputs')
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+@ApiForbiddenResponse({ description: 'The user role does not have permission for this operation' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('production-cycles/:cycleId/inputs')
 export class InputsController {

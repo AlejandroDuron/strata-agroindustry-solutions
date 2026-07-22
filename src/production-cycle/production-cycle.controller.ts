@@ -9,7 +9,14 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+} from '@nestjs/swagger';
 import { ProductionCycleService } from './production-cycle.service';
 import { CreateProductionCycleDto } from './dto/create-production-cycle.dto';
 import { UpdateProductionCycleDto } from './dto/update-production-cycle.dto';
@@ -19,6 +26,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Production Cycles')
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+@ApiForbiddenResponse({ description: 'The user role does not have permission for this operation' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('production-cycle')
 export class ProductionCycleController {
@@ -30,6 +39,8 @@ export class ProductionCycleController {
   @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Open a new production cycle' })
   @ApiResponse({ status: 201, description: 'Cycle created successfully' })
+  @ApiResponse({ status: 400, description: 'The field already has an open cycle' })
+  @ApiResponse({ status: 404, description: 'Field or crop not found' })
   create(@Body() createDto: CreateProductionCycleDto) {
     return this.productionCycleService.create(createDto);
   }

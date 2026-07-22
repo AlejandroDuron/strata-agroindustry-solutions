@@ -12,8 +12,8 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ example: 'user', required: false })
+  @ApiProperty({ example: 'operador', required: false, enum: ['admin', 'gerente', 'operador', 'auditor'] })
   @IsOptional()
   @IsString()
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'gerente' | 'operador' | 'auditor';
 }

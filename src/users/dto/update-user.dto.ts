@@ -13,8 +13,8 @@ export class UpdateUserDto {
   @MinLength(6)
   password?: string;
 
-  @ApiPropertyOptional({ example: 'admin' })
+  @ApiPropertyOptional({ example: 'gerente', enum: ['admin', 'gerente', 'operador', 'auditor'] })
   @IsOptional()
   @IsString()
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'gerente' | 'operador' | 'auditor';
 }

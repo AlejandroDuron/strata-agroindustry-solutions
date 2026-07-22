@@ -12,8 +12,8 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiPropertyOptional({ example: 'user' })
+  @ApiPropertyOptional({ example: 'operador', enum: ['admin', 'gerente', 'operador', 'auditor'] })
   @IsOptional()
   @IsString()
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'gerente' | 'operador' | 'auditor';
 }

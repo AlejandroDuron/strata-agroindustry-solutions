@@ -16,6 +16,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { HarvestsService } from './harvests.service';
 import { CreateHarvestDto } from './dto/create-harvest.dto';
@@ -26,6 +28,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Harvests')
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+@ApiForbiddenResponse({ description: 'The user role does not have permission for this operation' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('harvests')
 export class HarvestsController {

@@ -11,7 +11,14 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+} from '@nestjs/swagger';
 import { FarmsService } from './farms.service';
 import { CreateFarmDto } from './dto/create-farm.dto';
 import { UpdateFarmDto } from './dto/update-farm.dto';
@@ -21,6 +28,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Farms')
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+@ApiForbiddenResponse({ description: 'The user role does not have permission for this operation' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('farms')
 export class FarmsController {

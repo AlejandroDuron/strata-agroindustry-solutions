@@ -9,7 +9,14 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { CropEventsService } from './crop-events.service';
 import { CreateCropEventDto } from './dto/create-crop-event.dto';
 import { UpdateCropEventDto } from './dto/update-crop-event.dto';
@@ -19,6 +26,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Crop Events')
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+@ApiForbiddenResponse({ description: 'The user role does not have permission for this operation' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('production-cycles/:cycleId/events')
 export class CropEventsController {
