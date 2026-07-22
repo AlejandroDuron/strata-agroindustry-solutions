@@ -104,13 +104,20 @@ export async function seedAgroindustry(dataSource: DataSource): Promise<void> {
   let inputCount = 0;
   for (const cycle of cycles) {
     const count = 2 + Math.floor(Math.random() * 3);
+    let totalCost = 0;
     for (let i = 0; i < count; i++) {
       const input = inputRepo.create(
         createInput({ productionCycle: cycle }, inputCount),
       );
-      await inputRepo.save(input);
+      const saved = await inputRepo.save(input);
+      totalCost += saved.quantity * saved.unitCost;
       inputCount++;
     }
+    // Recalculate currentCostPerArea for the cycle
+    const field = fields.find((f) => f.id === cycle.fieldId);
+    const area = field?.area || 1;
+    cycle.currentCostPerArea = parseFloat((totalCost / area).toFixed(2));
+    await cycleRepo.save(cycle);
   }
   console.log(`  Created ${inputCount} inputs`);
 

@@ -28,15 +28,18 @@ describe('AuthController', () => {
     const dto: RegisterDto = {
       email: 'new@example.com',
       password: 'password123',
-      role: 'operador',
     };
 
-    authService.register.mockResolvedValue({ id: '1', email: dto.email, role: dto.role });
+    authService.register.mockResolvedValue({ id: '1', email: dto.email, role: 'operador' });
 
     const result = await controller.register(dto);
 
-    expect(authService.register).toHaveBeenCalledWith(dto);
-    expect(result).toEqual({ id: '1', email: dto.email, role: dto.role });
+    expect(authService.register).toHaveBeenCalledWith({
+      email: dto.email,
+      password: dto.password,
+      role: 'operador',
+    });
+    expect(result).toEqual({ id: '1', email: dto.email, role: 'operador' });
   });
 
   it('should login a valid user', async () => {

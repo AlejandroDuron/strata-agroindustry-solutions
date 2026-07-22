@@ -25,6 +25,17 @@ Backend for agricultural farms, cooperatives, and agro-exporters that need to di
 - [Database Schema](#database-schema)
 - [Roles and Permissions](#roles-and-permissions)
 
+## Prerequisites
+
+- **Node.js** >= 18
+- **npm** >= 9
+- **PostgreSQL** >= 14 (running and accessible)
+
+> Make sure the database specified in `DB_NAME` exists before running the app. You can create it with:
+> ```sql
+> CREATE DATABASE strata_agroindustry;
+> ```
+
 ## Getting Started
 
 ```bash
@@ -53,12 +64,11 @@ Copy `.env.example` to `.env` and adjust as needed:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DB_TYPE` | `sqlite` | Database engine (`sqlite` or `postgres`) |
-| `DB_DATABASE` | `db.sqlite` | Database name/path |
-| `DB_HOST` | — | PostgreSQL host (only if `DB_TYPE=postgres`) |
-| `DB_PORT` | — | PostgreSQL port |
-| `DB_USERNAME` | — | PostgreSQL username |
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USERNAME` | `postgres` | PostgreSQL username |
 | `DB_PASSWORD` | — | PostgreSQL password |
+| `DB_NAME` | `strata_agroindustry` | PostgreSQL database name |
 | `JWT_SECRET` | — | Secret for signing JWT tokens |
 | `JWT_EXPIRATION` | `7d` | Token expiration time |
 | `PORT` | `3000` | API port |
@@ -72,6 +82,7 @@ Copy `.env.example` to `.env` and adjust as needed:
 | `npm run build` | Compile the project |
 | `npm run start:prod` | Run the compiled version |
 | `npm run seed` | Populate the database with sample data |
+| `npm run seed:fresh` | Drop all tables, recreate them, and seed from scratch |
 | `npm run lint` | Run ESLint with auto-fix |
 | `npm run format` | Format code with Prettier |
 | `npm run test` | Run unit tests |
