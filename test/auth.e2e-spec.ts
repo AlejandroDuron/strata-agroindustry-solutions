@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp, cleanDatabase, seedRoles } from './utils/test-app';
+import { createTestApp, resetDatabase } from './utils/test-app';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -10,8 +10,7 @@ describe('AuthController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase(app);
-    await seedRoles(app);
+    await resetDatabase(app);
   });
 
   afterAll(async () => {
@@ -58,5 +57,17 @@ describe('AuthController (e2e)', () => {
       .post('/auth/register')
       .send({ email: 'not-an-email', password: '123' })
       .expect(400);
+  });
+
+  it('should reject registration with a duplicate email (409)', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email: 'duplicate@example.com', password: 'securePassword' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email: 'duplicate@example.com', password: 'anotherPassword' })
+      .expect(409);
   });
 });

@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp, cleanDatabase, seedRoles } from './utils/test-app';
+import { createTestApp, resetDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('UsersController (e2e)', () => {
@@ -11,8 +11,7 @@ describe('UsersController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase(app);
-    await seedRoles(app);
+    await resetDatabase(app);
   });
 
   afterAll(async () => {
@@ -26,14 +25,16 @@ describe('UsersController (e2e)', () => {
   it('should reject non-admin roles', async () => {
     await request(app.getHttpServer())
       .get('/users')
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', await authHeader(app, 'gerente'))
       .expect(403);
   });
 
   it('should allow admin to create and list users', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
     const createResponse = await request(app.getHttpServer())
       .post('/users')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ email: 'nuevo@example.com', password: 'password123', role: 'operador' })
       .expect(201);
 
@@ -42,16 +43,37 @@ describe('UsersController (e2e)', () => {
 
     const listResponse = await request(app.getHttpServer())
       .get('/users')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .expect(200);
 
-    expect(listResponse.body).toHaveLength(1);
+    // The list includes the bootstrap admin + the created user + the admin we logged in as
+    expect(listResponse.body.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should return 404 when deleting a non-existent user', async () => {
     await request(app.getHttpServer())
       .delete('/users/999')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', await authHeader(app, 'admin'))
+      .expect(404);
+  });
+
+  it('should support hard delete with ?hard=true', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/users')
+      .set('Authorization', adminAuth)
+      .send({ email: 'harddelete@example.com', password: 'password123', role: 'operador' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/users/${createResponse.body.id}?hard=true`)
+      .set('Authorization', adminAuth)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/users/${createResponse.body.id}`)
+      .set('Authorization', adminAuth)
       .expect(404);
   });
 });

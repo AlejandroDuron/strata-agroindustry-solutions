@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp, cleanDatabase } from './utils/test-app';
+import { createTestApp, resetDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('ProductionCycleController (e2e)', () => {
@@ -11,7 +11,7 @@ describe('ProductionCycleController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase(app);
+    await resetDatabase(app);
   });
 
   afterAll(async () => {
@@ -20,21 +20,23 @@ describe('ProductionCycleController (e2e)', () => {
 
   /** Helper: create a farm + field + crop, returns their IDs */
   async function seedFieldAndCrop() {
+    const adminAuth = await authHeader(app, 'admin');
+
     const farmRes = await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ name: 'Finca Test', location: 'Santa Ana' })
       .expect(201);
 
     const fieldRes = await request(app.getHttpServer())
       .post('/fields')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ farmId: farmRes.body.id, name: 'Lote 1', area: 5 })
       .expect(201);
 
     const cropRes = await request(app.getHttpServer())
       .post('/crops')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ type: 'Coffee', variety: 'Arabica' })
       .expect(201);
 
@@ -46,7 +48,7 @@ describe('ProductionCycleController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/production-cycle')
-      .set('Authorization', authHeader('operador'))
+      .set('Authorization', await authHeader(app, 'operador'))
       .send({
         fieldId,
         cropId,
@@ -59,6 +61,7 @@ describe('ProductionCycleController (e2e)', () => {
 
   it('should create a cycle and reject a second open cycle for the same field', async () => {
     const { fieldId, cropId } = await seedFieldAndCrop();
+    const gerenteAuth = await authHeader(app, 'gerente');
     const dto = {
       fieldId,
       cropId,
@@ -69,23 +72,24 @@ describe('ProductionCycleController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/production-cycle')
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', gerenteAuth)
       .send(dto)
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/production-cycle')
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', gerenteAuth)
       .send(dto)
       .expect(400);
   });
 
   it('should reject closing a cycle without harvests', async () => {
     const { fieldId, cropId } = await seedFieldAndCrop();
+    const adminAuth = await authHeader(app, 'admin');
 
     const created = await request(app.getHttpServer())
       .post('/production-cycle')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({
         fieldId,
         cropId,
@@ -97,16 +101,17 @@ describe('ProductionCycleController (e2e)', () => {
 
     await request(app.getHttpServer())
       .patch(`/production-cycle/${created.body.id}/close`)
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .expect(400);
   });
 
   it('should close a cycle and compute the financial summary', async () => {
     const { fieldId, cropId } = await seedFieldAndCrop();
+    const adminAuth = await authHeader(app, 'admin');
 
     const created = await request(app.getHttpServer())
       .post('/production-cycle')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({
         fieldId,
         cropId,
@@ -119,7 +124,7 @@ describe('ProductionCycleController (e2e)', () => {
     // Add a harvest
     await request(app.getHttpServer())
       .post('/harvests')
-      .set('Authorization', authHeader('operador'))
+      .set('Authorization', await authHeader(app, 'operador'))
       .send({
         cycleId: created.body.id,
         quantityObtained: 20,
@@ -132,7 +137,7 @@ describe('ProductionCycleController (e2e)', () => {
     // Add an input
     await request(app.getHttpServer())
       .post(`/production-cycles/${created.body.id}/inputs`)
-      .set('Authorization', authHeader('operador'))
+      .set('Authorization', await authHeader(app, 'operador'))
       .send({
         name: 'Urea',
         type: 'FERTILIZER',
@@ -146,7 +151,7 @@ describe('ProductionCycleController (e2e)', () => {
     // Close the cycle
     const closeResponse = await request(app.getHttpServer())
       .patch(`/production-cycle/${created.body.id}/close`)
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', await authHeader(app, 'gerente'))
       .expect(200);
 
     expect(closeResponse.body.cycle.status).toBe('CLOSED');
@@ -157,10 +162,11 @@ describe('ProductionCycleController (e2e)', () => {
 
   it('should reject deletion from a gerente and allow it from admin', async () => {
     const { fieldId, cropId } = await seedFieldAndCrop();
+    const adminAuth = await authHeader(app, 'admin');
 
     const created = await request(app.getHttpServer())
       .post('/production-cycle')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({
         fieldId,
         cropId,
@@ -172,12 +178,75 @@ describe('ProductionCycleController (e2e)', () => {
 
     await request(app.getHttpServer())
       .delete(`/production-cycle/${created.body.id}`)
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', await authHeader(app, 'gerente'))
       .expect(403);
 
     await request(app.getHttpServer())
       .delete(`/production-cycle/${created.body.id}`)
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .expect(200);
+  });
+
+  it('should reject deletion of a closed cycle with 400', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/production-cycle')
+      .set('Authorization', adminAuth)
+      .send({
+        fieldId,
+        cropId,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
+      .expect(201);
+
+    // Add harvest and close
+    await request(app.getHttpServer())
+      .post('/harvests')
+      .set('Authorization', adminAuth)
+      .send({ cycleId: created.body.id, quantityObtained: 10, quality: 'A', unitSalePrice: 100, quantitySold: 8 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/production-cycle/${created.body.id}/close`)
+      .set('Authorization', adminAuth)
+      .expect(200);
+
+    // Try to delete the closed cycle
+    await request(app.getHttpServer())
+      .delete(`/production-cycle/${created.body.id}`)
+      .set('Authorization', adminAuth)
+      .expect(400);
+  });
+
+  it('should support hard delete with ?hard=true', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/production-cycle')
+      .set('Authorization', adminAuth)
+      .send({
+        fieldId,
+        cropId,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/production-cycle/${created.body.id}?hard=true`)
+      .set('Authorization', adminAuth)
+      .expect(200);
+
+    // Should be completely gone
+    await request(app.getHttpServer())
+      .get(`/production-cycle/${created.body.id}`)
+      .set('Authorization', adminAuth)
+      .expect(404);
   });
 });

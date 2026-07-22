@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp, cleanDatabase } from './utils/test-app';
+import { createTestApp, resetDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('FarmsController (e2e)', () => {
@@ -11,7 +11,7 @@ describe('FarmsController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase(app);
+    await resetDatabase(app);
   });
 
   afterAll(async () => {
@@ -21,7 +21,7 @@ describe('FarmsController (e2e)', () => {
   it('should reject creation from an operador (403)', async () => {
     await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('operador'))
+      .set('Authorization', await authHeader(app, 'operador'))
       .send({ name: 'Finca El Roble', location: 'Santa Ana' })
       .expect(403);
   });
@@ -29,13 +29,13 @@ describe('FarmsController (e2e)', () => {
   it('should allow a gerente to create a farm and list it', async () => {
     await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', await authHeader(app, 'gerente'))
       .send({ name: 'Finca El Roble', location: 'Santa Ana' })
       .expect(201);
 
     const listResponse = await request(app.getHttpServer())
       .get('/farms')
-      .set('Authorization', authHeader('auditor'))
+      .set('Authorization', await authHeader(app, 'auditor'))
       .expect(200);
 
     expect(listResponse.body).toHaveLength(1);
@@ -45,40 +45,64 @@ describe('FarmsController (e2e)', () => {
   it('should reject an invalid payload with 400', async () => {
     await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', await authHeader(app, 'admin'))
       .send({ name: '' })
       .expect(400);
   });
 
   it('should return 409 when creating a farm with a duplicate name', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
     await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ name: 'Finca Duplicada', location: 'Sonsonate' })
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ name: 'Finca Duplicada', location: 'Sonsonate' })
       .expect(409);
   });
 
   it('should reject deletion from a gerente and allow it from admin', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
     const created = await request(app.getHttpServer())
       .post('/farms')
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .send({ name: 'Finca a Eliminar', location: 'La Libertad' })
       .expect(201);
 
     await request(app.getHttpServer())
       .delete(`/farms/${created.body.id}`)
-      .set('Authorization', authHeader('gerente'))
+      .set('Authorization', await authHeader(app, 'gerente'))
       .expect(403);
 
     await request(app.getHttpServer())
       .delete(`/farms/${created.body.id}`)
-      .set('Authorization', authHeader('admin'))
+      .set('Authorization', adminAuth)
       .expect(200);
+  });
+
+  it('should support hard delete with ?hard=true', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', adminAuth)
+      .send({ name: 'Finca Hard Delete', location: 'La Libertad' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/farms/${created.body.id}?hard=true`)
+      .set('Authorization', adminAuth)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/farms/${created.body.id}`)
+      .set('Authorization', adminAuth)
+      .expect(404);
   });
 });

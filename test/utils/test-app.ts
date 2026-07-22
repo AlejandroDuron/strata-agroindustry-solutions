@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
+import { resetTokenCache } from './build-token';
 
 /**
  * Creates a full NestJS application backed by a real PostgreSQL test database.
@@ -51,4 +52,14 @@ export async function seedRoles(app: INestApplication): Promise<void> {
       ('auditor', 'Read-only reports')
     ON CONFLICT (name) DO NOTHING
   `);
+}
+
+/**
+ * Full reset: truncates tables, seeds roles, and clears any cached auth tokens.
+ * Use this in beforeEach for complete test isolation.
+ */
+export async function resetDatabase(app: INestApplication): Promise<void> {
+  await cleanDatabase(app);
+  await seedRoles(app);
+  resetTokenCache();
 }
