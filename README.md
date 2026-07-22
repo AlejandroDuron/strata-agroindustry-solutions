@@ -17,12 +17,14 @@ Backend for agricultural farms, cooperatives, and agro-exporters that need to di
 ## Table of Contents
 
 - [Getting Started](#getting-started)
+- [Running Tests](#running-tests)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [API Documentation](#api-documentation)
 - [Business Flow](#business-flow)
 - [Business Rules](#business-rules)
 - [Database Schema](#database-schema)
+- [Test Users (Seed)](#test-users-seed)
 - [Roles and Permissions](#roles-and-permissions)
 
 ## Prerequisites
@@ -48,15 +50,37 @@ npm install
 
 # 3. Set up environment variables
 cp .env.example .env
+# Edit .env if you need to change DB_PASSWORD or other values
 
-# 4. Run in development mode
+# 4. Create the PostgreSQL databases
+psql -U postgres -c "CREATE DATABASE strata_agroindustry;"
+psql -U postgres -c "CREATE DATABASE strata_agroindustry_test;"
+
+# 5. Seed the database (creates roles, users, and sample data)
+npm run seed:fresh
+
+# 6. Run in development mode
 npm run start:dev
-
-# 5. (Optional) Seed the database with sample data
-npm run seed
 ```
 
+> **Important:** The seed step (5) is required. Without it, there are no roles or users in the database and the API won't be functional.
+
 The API will be available at `http://localhost:3000` and the Swagger docs at `http://localhost:3000/api`.
+
+## Running Tests
+
+```bash
+# Unit tests
+npm run test
+
+# End-to-end tests (requires the strata_agroindustry_test database to exist)
+npm run test:e2e
+
+# Unit tests with coverage report
+npm run test:cov
+```
+
+> The e2e tests connect to a real PostgreSQL database (`strata_agroindustry_test` as defined in `.env.test`). Make sure it exists before running them.
 
 ## Environment Variables
 
@@ -168,6 +192,28 @@ ROLE (N) ──── (N) PERMISSION
 | `harvest` | id, cycle_id, quantityObtained, quality (A/B/C), unitSalePrice, quantitySold |
 | `user` | id, name, email (unique), passwordHash, isActive, roleId |
 | `role` | id, name (unique), description |
+
+## Test Users (Seed)
+
+After running `npm run seed` or `npm run seed:fresh`, the following users are available for testing:
+
+| Role | Email | Password |
+|------|-------|----------|
+| admin | `admin@strata.com` | `Admin123!` |
+| gerente | `gerente@strata.com` | `Gerente123!` |
+| operador | `operador@strata.com` | `Operador123!` |
+| auditor | `auditor@strata.com` | `Auditor123!` |
+
+To obtain a JWT token, send a `POST /auth/login` request:
+
+```json
+{
+  "email": "admin@strata.com",
+  "password": "Admin123!"
+}
+```
+
+The response will include an `access_token` that you can use in the `Authorization: Bearer <token>` header for all subsequent requests.
 
 ## Roles and Permissions
 
