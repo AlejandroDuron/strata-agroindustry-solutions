@@ -32,7 +32,17 @@ export class CropEventsService {
   }
 
   async create(cycleId: number, dto: CreateCropEventDto): Promise<CropEvent> {
-    await this.getCycleAndValidateOpen(cycleId);
+    const cycle = await this.getCycleAndValidateOpen(cycleId);
+
+    if (new Date(dto.eventDate) < new Date(cycle.sowingDate)) {
+      throw new BadRequestException(
+        `eventDate cannot be before the cycle sowingDate (${cycle.sowingDate})`
+      );
+    }
+
+    if (dto.resolvedAt && new Date(dto.resolvedAt) < new Date(dto.eventDate)) {
+      throw new BadRequestException('resolvedAt cannot be before eventDate');
+    }
 
     const event = this.eventRepo.create({
       ...dto,
@@ -67,8 +77,20 @@ export class CropEventsService {
   }
 
   async update(cycleId: number, id: number, dto: UpdateCropEventDto): Promise<CropEvent> {
-    await this.getCycleAndValidateOpen(cycleId);
+    const cycle = await this.getCycleAndValidateOpen(cycleId);
     const event = await this.findOne(cycleId, id);
+
+    const newEventDate = dto.eventDate || event.eventDate;
+    if (new Date(newEventDate) < new Date(cycle.sowingDate)) {
+      throw new BadRequestException(
+        `eventDate cannot be before the cycle sowingDate (${cycle.sowingDate})`
+      );
+    }
+
+    const newResolvedAt = dto.resolvedAt !== undefined ? dto.resolvedAt : event.resolvedAt;
+    if (newResolvedAt && new Date(newResolvedAt) < new Date(newEventDate)) {
+      throw new BadRequestException('resolvedAt cannot be before eventDate');
+    }
 
     Object.assign(event, dto);
     return this.eventRepo.save(event);

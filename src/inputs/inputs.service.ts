@@ -46,6 +46,12 @@ export class InputsService {
   async create(cycleId: number, dto: CreateInputDto): Promise<Input> {
     const cycle = await this.getCycleAndValidateOpen(cycleId);
 
+    if (new Date(dto.applicationDate) < new Date(cycle.sowingDate)) {
+      throw new BadRequestException(
+        `applicationDate cannot be before the cycle sowingDate (${cycle.sowingDate})`
+      );
+    }
+
     const input = this.inputRepo.create({
       ...dto,
       productionCycleId: cycleId,
@@ -86,6 +92,13 @@ export class InputsService {
   async update(cycleId: number, id: number, dto: UpdateInputDto): Promise<Input> {
     const cycle = await this.getCycleAndValidateOpen(cycleId);
     const input = await this.findOne(cycleId, id);
+
+    const checkDate = dto.applicationDate || input.applicationDate;
+    if (new Date(checkDate) < new Date(cycle.sowingDate)) {
+      throw new BadRequestException(
+        `applicationDate cannot be before the cycle sowingDate (${cycle.sowingDate})`
+      );
+    }
 
     Object.assign(input, dto);
     if (dto.type) {
