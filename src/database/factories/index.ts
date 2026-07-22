@@ -5,3 +5,4 @@ export { createProductionCycle } from './production-cycle.factory';
 export { createInput } from './input.factory';
 export { createCropEvent } from './crop-event.factory';
 export { createHarvest } from './harvest.factory';
+export { createUser, getSeedUsers } from './user.factory';

@@ -1,11 +1,14 @@
 import { DataSource } from 'typeorm';
 import { Role } from '../auth/entities/role.entity';
 import { Permission } from '../auth/entities/permission.entity';
+import { User } from '../users/entities/user.entity';
 import { seedAgroindustry } from './seeds/agroindustry.seed';
+import { createUser, getSeedUsers } from './factories';
 
 export async function seedDatabase(dataSource: DataSource) {
   const roleRepository = dataSource.getRepository(Role);
   const permissionRepository = dataSource.getRepository(Permission);
+  const userRepository = dataSource.getRepository(User);
 
   // --- Auth seeds ---
   const roles = [
@@ -44,6 +47,20 @@ export async function seedDatabase(dataSource: DataSource) {
       await permissionRepository.save(permissionRepository.create({ name: permissionName, description: permissionName }));
     }
   }
+
+  // --- User seeds ---
+  const seedUsers = getSeedUsers();
+  for (const userData of seedUsers) {
+    const existing = await userRepository.findOne({ where: { email: userData.email } });
+    if (!existing) {
+      const role = await roleRepository.findOne({ where: { name: userData.roleName } });
+      if (role) {
+        const userPartial = await createUser(userData, role);
+        await userRepository.save(userRepository.create(userPartial));
+      }
+    }
+  }
+  console.log(`  Created ${seedUsers.length} users`);
 
   // --- Agroindustry seeds ---
   await seedAgroindustry(dataSource);
