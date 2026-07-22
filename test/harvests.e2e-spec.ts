@@ -86,6 +86,27 @@ describe('HarvestsController (e2e)', () => {
       .expect(403);
   });
 
+  it('should reject update from an auditor (403)', async () => {
+    const cycleId = await seedOpenCycle();
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/harvests')
+      .set('Authorization', adminAuth)
+      .send({ ...validDto, cycleId })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/harvests/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'auditor'))
+      .send({ quantityObtained: 30 })
+      .expect(403);
+  });
+
+  it('should reject requests without a token (401)', async () => {
+    await request(app.getHttpServer()).get('/harvests').expect(401);
+  });
+
   it('should allow an operador to register a harvest on an open cycle', async () => {
     const cycleId = await seedOpenCycle();
 

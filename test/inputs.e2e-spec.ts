@@ -92,6 +92,27 @@ describe('InputsController (e2e)', () => {
       .expect(403);
   });
 
+  it('should reject update from an auditor (403)', async () => {
+    const cycleId = await seedOpenCycle();
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post(`/production-cycles/${cycleId}/inputs`)
+      .set('Authorization', adminAuth)
+      .send(validDto)
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/production-cycles/${cycleId}/inputs/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'auditor'))
+      .send({ quantity: 20 })
+      .expect(403);
+  });
+
+  it('should reject requests without a token (401)', async () => {
+    await request(app.getHttpServer()).get('/production-cycles/1/inputs').expect(401);
+  });
+
   it('should allow an operador to register an input and recalculate the cycle cost', async () => {
     const cycleId = await seedOpenCycle();
 

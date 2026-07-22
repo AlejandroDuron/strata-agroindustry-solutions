@@ -85,6 +85,36 @@ describe('CropEventsController (e2e)', () => {
       .expect(403);
   });
 
+  it('should reject deletion from a non-admin role (403)', async () => {
+    const cycleId = await seedOpenCycle();
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post(`/production-cycles/${cycleId}/events`)
+      .set('Authorization', adminAuth)
+      .send(validDto)
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/production-cycles/${cycleId}/events/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'operador'))
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .delete(`/production-cycles/${cycleId}/events/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'gerente'))
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .delete(`/production-cycles/${cycleId}/events/${created.body.id}`)
+      .set('Authorization', adminAuth)
+      .expect(200);
+  });
+
+  it('should reject requests without a token (401)', async () => {
+    await request(app.getHttpServer()).get('/production-cycles/1/events').expect(401);
+  });
+
   it('should allow an operador to register an event on an open cycle', async () => {
     const cycleId = await seedOpenCycle();
 

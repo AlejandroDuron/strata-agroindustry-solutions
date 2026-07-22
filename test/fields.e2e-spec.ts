@@ -27,12 +27,50 @@ describe('FieldsController (e2e)', () => {
     return res.body.id;
   }
 
+  it('should reject requests without a token (401)', async () => {
+    await request(app.getHttpServer()).get('/fields?farmId=1').expect(401);
+    await request(app.getHttpServer()).post('/fields').send({ farmId: 1, name: 'X', area: 1 }).expect(401);
+  });
+
   it('should reject creation from an operador (403)', async () => {
     const farmId = await createFarm();
     await request(app.getHttpServer())
       .post('/fields')
       .set('Authorization', await authHeader(app, 'operador'))
       .send({ farmId, name: 'Lote 1', area: 5.5 })
+      .expect(403);
+  });
+
+  it('should reject update from an operador (403)', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+    const farmId = await createFarm();
+
+    const created = await request(app.getHttpServer())
+      .post('/fields')
+      .set('Authorization', adminAuth)
+      .send({ farmId, name: 'Lote Patch Test', area: 4 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/fields/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'operador'))
+      .send({ name: 'Nombre Nuevo' })
+      .expect(403);
+  });
+
+  it('should reject deletion from an operador (403)', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+    const farmId = await createFarm();
+
+    const created = await request(app.getHttpServer())
+      .post('/fields')
+      .set('Authorization', adminAuth)
+      .send({ farmId, name: 'Lote Delete Test', area: 3 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/fields/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'operador'))
       .expect(403);
   });
 

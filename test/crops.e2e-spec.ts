@@ -30,6 +30,42 @@ describe('CropsController (e2e)', () => {
       .expect(403);
   });
 
+  it('should reject update from an operador (403)', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', adminAuth)
+      .send({ type: 'Sugarcane', variety: 'CP 72-2086' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/crops/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'operador'))
+      .send({ variety: 'Modified' })
+      .expect(403);
+  });
+
+  it('should reject deletion from a gerente (403) and allow it from admin', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', adminAuth)
+      .send({ type: 'Wheat', variety: 'Hard Red' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/crops/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'gerente'))
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .delete(`/crops/${created.body.id}`)
+      .set('Authorization', adminAuth)
+      .expect(200);
+  });
+
   it('should create and then read a crop', async () => {
     const created = await request(app.getHttpServer())
       .post('/crops')

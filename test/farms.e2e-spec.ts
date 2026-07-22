@@ -18,11 +18,32 @@ describe('FarmsController (e2e)', () => {
     await app.close();
   });
 
+  it('should reject requests without a token (401)', async () => {
+    await request(app.getHttpServer()).get('/farms').expect(401);
+    await request(app.getHttpServer()).post('/farms').send({ name: 'X', location: 'Y' }).expect(401);
+  });
+
   it('should reject creation from an operador (403)', async () => {
     await request(app.getHttpServer())
       .post('/farms')
       .set('Authorization', await authHeader(app, 'operador'))
       .send({ name: 'Finca El Roble', location: 'Santa Ana' })
+      .expect(403);
+  });
+
+  it('should reject update from an operador (403)', async () => {
+    const adminAuth = await authHeader(app, 'admin');
+
+    const created = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', adminAuth)
+      .send({ name: 'Finca Patch Test', location: 'San Salvador' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/farms/${created.body.id}`)
+      .set('Authorization', await authHeader(app, 'operador'))
+      .send({ name: 'Nombre Nuevo' })
       .expect(403);
   });
 
