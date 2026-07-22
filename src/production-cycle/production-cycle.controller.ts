@@ -14,10 +14,12 @@ import { ProductionCycleService } from './production-cycle.service';
 import { CreateProductionCycleDto } from './dto/create-production-cycle.dto';
 import { UpdateProductionCycleDto } from './dto/update-production-cycle.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Production Cycles')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('production-cycle')
 export class ProductionCycleController {
   constructor(
@@ -25,6 +27,7 @@ export class ProductionCycleController {
   ) {}
 
   @Post()
+  @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Open a new production cycle' })
   @ApiResponse({ status: 201, description: 'Cycle created successfully' })
   create(@Body() createDto: CreateProductionCycleDto) {
@@ -45,6 +48,7 @@ export class ProductionCycleController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Update a production cycle' })
   @ApiResponse({ status: 400, description: 'Cannot modify a closed cycle' })
   update(
@@ -55,6 +59,7 @@ export class ProductionCycleController {
   }
 
   @Patch(':id/close')
+  @Roles('admin', 'gerente')
   @ApiOperation({
     summary: 'Close a production cycle',
     description:
@@ -70,6 +75,7 @@ export class ProductionCycleController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete a production cycle' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.productionCycleService.remove(id);

@@ -10,19 +10,26 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { FieldsService } from './fields.service';
 import { CreateFieldDto } from './dto/create-field.dto';
 import { UpdateFieldDto } from './dto/update-field.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Fields')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('fields')
 export class FieldsController {
   constructor(private readonly fieldsService: FieldsService) { }
 
   @Post()
+  @Roles('admin', 'gerente')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a field in a farm' })
   @ApiResponse({ status: 201, description: 'Field created' })
@@ -49,6 +56,7 @@ export class FieldsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Update field data' })
   @ApiResponse({ status: 200, description: 'Field updated' })
   @ApiResponse({ status: 404, description: 'Field not found' })
@@ -61,6 +69,7 @@ export class FieldsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Deactivate field (soft delete)' })
   @ApiResponse({ status: 200, description: 'Field deactivated' })
   @ApiResponse({ status: 404, description: 'Field not found' })

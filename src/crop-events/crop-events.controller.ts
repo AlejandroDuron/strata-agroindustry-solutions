@@ -25,7 +25,7 @@ export class CropEventsController {
   constructor(private readonly cropEventsService: CropEventsService) {}
 
   @Post()
-  @Roles('admin', 'agronomo', 'operador', 'capataz')
+  @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Register a new event in the production cycle' })
   @ApiResponse({ status: 201, description: 'Event registered successfully.' })
   @ApiResponse({ status: 400, description: 'Cycle is closed or invalid data.' })
@@ -57,7 +57,7 @@ export class CropEventsController {
   }
 
   @Patch(':id')
-  @Roles('admin', 'agronomo')
+  @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Update a registered event' })
   @ApiResponse({ status: 200, description: 'Event updated successfully.' })
   @ApiResponse({ status: 400, description: 'Cycle is closed or invalid data.' })
@@ -71,7 +71,7 @@ export class CropEventsController {
   }
 
   @Delete(':id')
-  @Roles('admin', 'agronomo')
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete an event' })
   @ApiResponse({ status: 200, description: 'Event deleted successfully.' })
   @ApiResponse({ status: 400, description: 'Cycle is closed.' })

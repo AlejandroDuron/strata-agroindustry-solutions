@@ -8,14 +8,18 @@ export async function seedDatabase(dataSource: DataSource) {
   const permissionRepository = dataSource.getRepository(Permission);
 
   // --- Auth seeds ---
-  const adminRole = await roleRepository.findOne({ where: { name: 'admin' } });
-  if (!adminRole) {
-    await roleRepository.save(roleRepository.create({ name: 'admin', description: 'Administrator role' }));
-  }
+  const roles = [
+    { name: 'admin', description: 'Dueño de la finca. Control total sobre todos los recursos.' },
+    { name: 'gerente', description: 'Gestiona fincas, lotes (fields) y ciclos productivos. No registra operaciones diarias.' },
+    { name: 'operador', description: 'Registra actividades diarias: eventos, insumos, cosechas. No puede crear/eliminar fincas ni lotes.' },
+    { name: 'auditor', description: 'Solo lectura sobre reportes financieros y de rendimiento.' },
+  ];
 
-  const userRole = await roleRepository.findOne({ where: { name: 'user' } });
-  if (!userRole) {
-    await roleRepository.save(roleRepository.create({ name: 'user', description: 'Standard user role' }));
+  for (const role of roles) {
+    const existing = await roleRepository.findOne({ where: { name: role.name } });
+    if (!existing) {
+      await roleRepository.save(roleRepository.create(role));
+    }
   }
 
   const permissions = [

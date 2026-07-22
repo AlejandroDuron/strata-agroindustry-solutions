@@ -21,15 +21,18 @@ import { HarvestsService } from './harvests.service';
 import { CreateHarvestDto } from './dto/create-harvest.dto';
 import { UpdateHarvestDto } from './dto/update-harvest.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Harvests')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('harvests')
 export class HarvestsController {
   constructor(private readonly harvestsService: HarvestsService) {}
 
   @Post()
+  @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Register a new harvest' })
   @ApiResponse({ status: 201, description: 'Harvest created successfully' })
   @ApiResponse({ status: 400, description: 'Cannot add harvest to a closed cycle' })
@@ -56,6 +59,7 @@ export class HarvestsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Update a harvest' })
   @ApiResponse({ status: 400, description: 'Cannot modify harvest in a closed cycle' })
   @ApiResponse({ status: 404, description: 'Harvest not found' })
@@ -67,6 +71,7 @@ export class HarvestsController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete a harvest' })
   @ApiResponse({ status: 400, description: 'Cannot delete harvest from a closed cycle' })
   @ApiResponse({ status: 404, description: 'Harvest not found' })

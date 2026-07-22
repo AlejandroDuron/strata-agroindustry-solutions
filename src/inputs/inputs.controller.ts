@@ -25,7 +25,7 @@ export class InputsController {
   constructor(private readonly inputsService: InputsService) {}
 
   @Post()
-  @Roles('admin', 'agronomo', 'operador', 'capataz')
+  @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Register a new input for a production cycle' })
   @ApiResponse({ status: 201, description: 'Input created successfully.' })
   @ApiResponse({ status: 400, description: 'Production cycle is closed or invalid data.' })
@@ -57,7 +57,7 @@ export class InputsController {
   }
 
   @Patch(':id')
-  @Roles('admin', 'agronomo')
+  @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Update an input (recalculates cycle cost)' })
   @ApiResponse({ status: 200, description: 'Input updated and cost recalculated.' })
   @ApiResponse({ status: 400, description: 'Production cycle is closed or invalid data.' })
@@ -71,7 +71,7 @@ export class InputsController {
   }
 
   @Delete(':id')
-  @Roles('admin', 'agronomo')
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete an input from a production cycle (recalculates cycle cost)' })
   @ApiResponse({ status: 200, description: 'Input deleted and cost recalculated.' })
   @ApiResponse({ status: 400, description: 'Production cycle is closed.' })
