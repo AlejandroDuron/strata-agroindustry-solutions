@@ -26,12 +26,18 @@ export class ProductionCycleService {
     private readonly fieldRepo: Repository<Field>,
     @InjectRepository(Crop)
     private readonly cropRepo: Repository<Crop>,
-  ) {}
+  ) { }
 
   async create(dto: CreateProductionCycleDto): Promise<ProductionCycle> {
-    const field = await this.fieldRepo.findOneBy({ id: dto.fieldId });
+    const field = await this.fieldRepo.findOne({
+      where: { id: dto.fieldId },
+      relations: { farm: true },
+    });
     if (!field) {
       throw new NotFoundException(`Field with id ${dto.fieldId} not found`);
+    }
+    if (!field.farm) {
+      throw new BadRequestException('Cannot open a production cycle on a field that belongs to a deactivated farm');
     }
 
     const crop = await this.cropRepo.findOneBy({ id: dto.cropId });
@@ -96,27 +102,7 @@ export class ProductionCycleService {
       );
     }
 
-    if (dto.fieldId) {
-      const field = await this.fieldRepo.findOneBy({ id: dto.fieldId });
-      if (!field) {
-        throw new NotFoundException(
-          `Field with id ${dto.fieldId} not found`,
-        );
-      }
-      cycle.fieldId = dto.fieldId;
-      cycle.field = field;
-    }
 
-    if (dto.cropId) {
-      const crop = await this.cropRepo.findOneBy({ id: dto.cropId });
-      if (!crop) {
-        throw new NotFoundException(
-          `Crop with id ${dto.cropId} not found`,
-        );
-      }
-      cycle.cropId = dto.cropId;
-      cycle.crop = crop;
-    }
 
     if (dto.sowingDate) cycle.sowingDate = dto.sowingDate;
     if (dto.expectedHarvestDate)
@@ -129,7 +115,10 @@ export class ProductionCycleService {
 
   async remove(id: number): Promise<void> {
     const cycle = await this.findOne(id);
-    await this.cycleRepo.remove(cycle);
+    if (cycle.status === 'CLOSED') {
+      throw new BadRequestException('Cannot delete a closed production cycle');
+    }
+    await this.cycleRepo.softRemove(cycle);
   }
 
   /**
@@ -152,85 +141,86 @@ export class ProductionCycleService {
     estimatedYield: number;
     historicalAvgYield: number | null;
   }> {
-    const cycle = await this.cycleRepo.findOne({
-      where: { id },
-      relations: { field: true, crop: true, harvests: true, inputs: true },
-    });
+    return this.cycleRepo.manager.transaction(async (manager) => {
+      const cycle = await manager.findOne(ProductionCycle, {
+        where: { id },
+        relations: { field: true, crop: true, harvests: true, inputs: true },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    if (!cycle) {
-      throw new NotFoundException(
-        `Production cycle with id ${id} not found`,
-      );
-    }
-
-    if (cycle.status === 'CLOSED') {
-      throw new BadRequestException('The cycle is already closed');
-    }
-
-    // 1. Validate at least one harvest exists
-    if (!cycle.harvests || cycle.harvests.length === 0) {
-      throw new BadRequestException(
-        'The cycle cannot be closed without at least one registered harvest',
-      );
-    }
-
-    // 2. Calculate total revenue
-    const totalRevenue = cycle.harvests.reduce(
-      (sum, h) => sum + h.quantitySold * h.unitSalePrice,
-      0,
-    );
-
-    // 3. Calculate total production cost
-    const totalCost = cycle.inputs.reduce(
-      (sum, i) => sum + i.quantity * i.unitCost,
-      0,
-    );
-
-    // 4. Gross margin
-    const grossMargin = totalRevenue - totalCost;
-
-    // 5. Real yield (total quantity obtained)
-    const realYield = cycle.harvests.reduce(
-      (sum, h) => sum + h.quantityObtained,
-      0,
-    );
-
-    // 6. Compare with historical average for the same field
-    const historicalAvgYield = await this.getHistoricalAverageYield(
-      cycle.field.id,
-      cycle.id,
-    );
-
-    let yieldAlert = false;
-    let alertMessage: string | null = null;
-    if (historicalAvgYield !== null && historicalAvgYield > 0) {
-      const threshold = historicalAvgYield * 0.8; // 20% below
-      if (realYield < threshold) {
-        yieldAlert = true;
-        const dropPercent = (
-          ((historicalAvgYield - realYield) / historicalAvgYield) * 100
-        ).toFixed(1);
-        alertMessage = `The yield of field "${cycle.field.name}" has dropped ${dropPercent}% compared to its historical average (${historicalAvgYield.toFixed(2)} → ${realYield.toFixed(2)})`;
+      if (!cycle) {
+        throw new NotFoundException(`Production cycle with id ${id} not found`);
       }
-    }
 
-    // 7. Update the cycle
-    cycle.totalRevenueAtClose = totalRevenue;
-    cycle.totalCostAtClose = totalCost;
-    cycle.grossMarginAtClose = grossMargin;
-    cycle.realYieldAtClose = realYield;
-    cycle.status = 'CLOSED';
+      if (cycle.status === 'CLOSED') {
+        throw new BadRequestException('The cycle is already closed');
+      }
 
-    const savedCycle = await this.cycleRepo.save(cycle);
+      // 1. Validate at least one harvest exists
+      if (!cycle.harvests || cycle.harvests.length === 0) {
+        throw new BadRequestException(
+          'The cycle cannot be closed without at least one registered harvest',
+        );
+      }
 
-    return {
-      cycle: savedCycle,
-      yieldAlert,
-      alertMessage,
-      realYield,
-      estimatedYield: cycle.estimatedYield,
-      historicalAvgYield,
-    };
+      // 2. Calculate total revenue
+      const totalRevenue = cycle.harvests.reduce(
+        (sum, h) => sum + h.quantitySold * h.unitSalePrice,
+        0,
+      );
+
+      // 3. Calculate total production cost
+      const totalCost = cycle.inputs.reduce(
+        (sum, i) => sum + i.quantity * i.unitCost,
+        0,
+      );
+
+      // 4. Gross margin
+      const grossMargin = totalRevenue - totalCost;
+
+      // 5. Real yield (total quantity obtained)
+      const realYield = cycle.harvests.reduce(
+        (sum, h) => sum + h.quantityObtained,
+        0,
+      );
+
+      // 6. Compare with historical average for the same field
+      const historicalAvgYield = await this.getHistoricalAverageYield(
+        cycle.field.id,
+        cycle.id,
+      );
+
+      let yieldAlert = false;
+      let alertMessage: string | null = null;
+      if (historicalAvgYield !== null && historicalAvgYield > 0) {
+        const threshold = historicalAvgYield * 0.8; // 20% below
+        if (realYield < threshold) {
+          yieldAlert = true;
+          const dropPercent = (
+            ((historicalAvgYield - realYield) / historicalAvgYield) * 100
+          ).toFixed(1);
+          alertMessage = `The yield of field "${cycle.field.name}" has dropped ${dropPercent}% compared to its historical average (${historicalAvgYield.toFixed(2)} → ${realYield.toFixed(2)})`;
+        }
+      }
+
+      // 7. Update the cycle
+      cycle.totalRevenueAtClose = totalRevenue;
+      cycle.totalCostAtClose = totalCost;
+      cycle.grossMarginAtClose = grossMargin;
+      cycle.realYieldAtClose = realYield;
+      cycle.status = 'CLOSED';
+
+      const savedCycle = await manager.save(cycle);
+
+      return {
+        cycle: savedCycle,
+        yieldAlert,
+        alertMessage,
+        realYield,
+        estimatedYield: cycle.estimatedYield,
+        historicalAvgYield,
+      };
+    });
   }
 
   /**

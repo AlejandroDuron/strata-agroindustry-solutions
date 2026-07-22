@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsIn } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -14,6 +14,6 @@ export class RegisterDto {
 
   @ApiPropertyOptional({ example: 'user' })
   @IsOptional()
-  @IsString()
-  role?: 'admin' | 'user';
+  @IsIn(['user'], { message: 'Registration only allows "user" role' })
+  role?: 'user';
 }
