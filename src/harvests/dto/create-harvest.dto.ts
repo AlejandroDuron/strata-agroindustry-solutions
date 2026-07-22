@@ -1,5 +1,6 @@
 import { IsInt, IsNumber, IsString, IsIn, Min, Max, Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { MaxDecimals } from '../../common/validators/max-decimals.validator';
 
 @ValidatorConstraint({ name: 'isLessThanOrEqualQuantityObtained', async: false })
 class IsLessThanOrEqualQuantityObtained implements ValidatorConstraintInterface {
@@ -24,6 +25,7 @@ export class CreateHarvestDto {
   @IsNumber()
   @Min(0.01, { message: 'quantityObtained must be greater than 0' })
   @Max(100000, { message: 'quantityObtained exceeds realistic maximum' })
+  @MaxDecimals(2, { message: 'quantityObtained must have at most 2 decimal places' })
   quantityObtained: number;
 
   @ApiProperty({ description: 'Quality grade', enum: ['A', 'B', 'C'], example: 'A' })
@@ -34,11 +36,13 @@ export class CreateHarvestDto {
   @ApiProperty({ description: 'Unit sale price per qq', example: 120.0 })
   @IsNumber()
   @Min(0.01, { message: 'unitSalePrice must be greater than 0' })
+  @MaxDecimals(2, { message: 'unitSalePrice must have at most 2 decimal places' })
   unitSalePrice: number;
 
   @ApiProperty({ description: 'Quantity sold (qq)', example: 22.0 })
   @IsNumber()
   @Min(0, { message: 'quantitySold cannot be negative' })
+  @MaxDecimals(2, { message: 'quantitySold must have at most 2 decimal places' })
   @Validate(IsLessThanOrEqualQuantityObtained)
   quantitySold: number;
 }

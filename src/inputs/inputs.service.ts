@@ -38,7 +38,9 @@ export class InputsService {
     });
 
     const totalCost = inputs.reduce((sum, input) => sum + (input.quantity * input.unitCost), 0);
-    const currentCostPerArea = fieldArea > 0 ? totalCost / fieldArea : 0;
+    const currentCostPerArea = fieldArea > 0
+      ? Math.round((totalCost / fieldArea) * 100) / 100
+      : 0;
 
     await this.cycleRepo.update(cycleId, { currentCostPerArea });
   }

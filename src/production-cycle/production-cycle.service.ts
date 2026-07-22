@@ -93,15 +93,19 @@ export class ProductionCycleService {
   }
 
   private attachFinancialSummary(cycle: ProductionCycle) {
-    const totalRevenue = (cycle.harvests ?? []).reduce(
-      (sum, h) => sum + h.quantitySold * h.unitSalePrice,
-      0,
-    );
-    const totalCost = (cycle.inputs ?? []).reduce(
-      (sum, i) => sum + i.quantity * i.unitCost,
-      0,
-    );
-    const grossMargin = totalRevenue - totalCost;
+    const totalRevenue = Math.round(
+      (cycle.harvests ?? []).reduce(
+        (sum, h) => sum + h.quantitySold * h.unitSalePrice,
+        0,
+      ) * 100,
+    ) / 100;
+    const totalCost = Math.round(
+      (cycle.inputs ?? []).reduce(
+        (sum, i) => sum + i.quantity * i.unitCost,
+        0,
+      ) * 100,
+    ) / 100;
+    const grossMargin = Math.round((totalRevenue - totalCost) * 100) / 100;
 
     return {
       ...cycle,
@@ -199,19 +203,23 @@ export class ProductionCycleService {
       }
 
       // 2. Calculate total revenue
-      const totalRevenue = cycle.harvests.reduce(
-        (sum, h) => sum + h.quantitySold * h.unitSalePrice,
-        0,
-      );
+      const totalRevenue = Math.round(
+        cycle.harvests.reduce(
+          (sum, h) => sum + h.quantitySold * h.unitSalePrice,
+          0,
+        ) * 100,
+      ) / 100;
 
       // 3. Calculate total production cost
-      const totalCost = cycle.inputs.reduce(
-        (sum, i) => sum + i.quantity * i.unitCost,
-        0,
-      );
+      const totalCost = Math.round(
+        cycle.inputs.reduce(
+          (sum, i) => sum + i.quantity * i.unitCost,
+          0,
+        ) * 100,
+      ) / 100;
 
       // 4. Gross margin
-      const grossMargin = totalRevenue - totalCost;
+      const grossMargin = Math.round((totalRevenue - totalCost) * 100) / 100;
 
       // 5. Real yield (total quantity obtained)
       const realYield = cycle.harvests.reduce(
