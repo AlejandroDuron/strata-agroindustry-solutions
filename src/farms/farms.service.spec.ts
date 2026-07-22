@@ -1,12 +1,19 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { FarmsService } from './farms.service';
 
+const mockQueryBuilder = {
+  where: jest.fn().mockReturnThis(),
+  andWhere: jest.fn().mockReturnThis(),
+  getOne: jest.fn(),
+};
+
 const mockRepository = () => ({
   create: jest.fn(),
   save: jest.fn(),
   find: jest.fn(),
   findOne: jest.fn(),
   softRemove: jest.fn(),
+  createQueryBuilder: jest.fn(() => mockQueryBuilder),
 });
 
 describe('FarmsService', () => {
@@ -16,6 +23,9 @@ describe('FarmsService', () => {
   beforeEach(() => {
     farmRepository = mockRepository() as any;
     service = new FarmsService(farmRepository as any);
+    mockQueryBuilder.where.mockReturnThis();
+    mockQueryBuilder.andWhere.mockReturnThis();
+    mockQueryBuilder.getOne.mockReset();
   });
 
   it('should be defined', () => {
@@ -25,26 +35,37 @@ describe('FarmsService', () => {
   describe('create', () => {
     it('should create a farm when the name is not taken', async () => {
       const dto = { name: 'Finca El Roble', location: 'Santa Ana' };
-      farmRepository.findOne.mockResolvedValue(null);
+      farmRepository.findOne
+        .mockResolvedValueOnce(null)  // no active duplicate
+        .mockResolvedValueOnce(null); // no deleted duplicate
       farmRepository.create.mockReturnValue(dto as any);
       farmRepository.save.mockResolvedValue({ id: 1, ...dto } as any);
 
       const result = await service.create(dto as any);
 
-      expect(farmRepository.findOne).toHaveBeenCalledWith({
-        where: { name: dto.name },
-        withDeleted: true,
-      });
       expect(result).toEqual({ id: 1, ...dto });
     });
 
-    it('should throw ConflictException when the name is already taken', async () => {
-      farmRepository.findOne.mockResolvedValue({ id: 1, name: 'Finca El Roble' } as any);
+    it('should throw ConflictException when the name is already taken by an active farm', async () => {
+      farmRepository.findOne.mockResolvedValueOnce({ id: 1, name: 'Finca El Roble' } as any);
 
       await expect(
         service.create({ name: 'Finca El Roble', location: 'Santa Ana' } as any),
       ).rejects.toThrow(ConflictException);
       expect(farmRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should restore a soft-deleted farm with the same name', async () => {
+      const deletedFarm = { id: 5, name: 'Finca Vieja', location: 'Old Loc', deletedAt: new Date() };
+      farmRepository.findOne
+        .mockResolvedValueOnce(null)           // no active duplicate
+        .mockResolvedValueOnce(deletedFarm as any); // found deleted
+      farmRepository.save.mockResolvedValue({ ...deletedFarm, deletedAt: null, location: 'New Loc' } as any);
+
+      const result = await service.create({ name: 'Finca Vieja', location: 'New Loc' } as any);
+
+      expect(result.deletedAt).toBeNull();
+      expect(result.location).toBe('New Loc');
     });
   });
 
@@ -84,9 +105,8 @@ describe('FarmsService', () => {
   describe('update', () => {
     it('should update a farm when the new name is free', async () => {
       const farm = { id: 1, name: 'Old Name', location: 'Old Location' };
-      farmRepository.findOne
-        .mockResolvedValueOnce(farm as any) // findNonDeletedOrThrow
-        .mockResolvedValueOnce(null); // throwIfNameTaken
+      farmRepository.findOne.mockResolvedValueOnce(farm as any); // findNonDeletedOrThrow
+      mockQueryBuilder.getOne.mockResolvedValue(null); // no duplicate
       farmRepository.save.mockResolvedValue({ ...farm, name: 'New Name' } as any);
 
       const result = await service.update(1, { name: 'New Name' } as any);
@@ -101,7 +121,7 @@ describe('FarmsService', () => {
 
       await service.update(1, { name: 'Same Name' } as any);
 
-      expect(farmRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(farmRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when the farm to update does not exist', async () => {
@@ -112,9 +132,8 @@ describe('FarmsService', () => {
 
     it('should throw ConflictException when renaming to a taken name', async () => {
       const farm = { id: 1, name: 'Old Name', location: 'Loc' };
-      farmRepository.findOne
-        .mockResolvedValueOnce(farm as any)
-        .mockResolvedValueOnce({ id: 2, name: 'Taken Name' } as any);
+      farmRepository.findOne.mockResolvedValueOnce(farm as any);
+      mockQueryBuilder.getOne.mockResolvedValue({ id: 2, name: 'Taken Name' });
 
       await expect(service.update(1, { name: 'Taken Name' } as any)).rejects.toThrow(
         ConflictException,

@@ -33,8 +33,9 @@ describe('UsersService', () => {
         role: 'admin',
       };
 
-      // First findOne checks for duplicate email — no duplicate
-      userRepository.findOne.mockResolvedValueOnce(null);
+      userRepository.findOne
+        .mockResolvedValueOnce(null)  // no active duplicate
+        .mockResolvedValueOnce(null); // no deleted duplicate
       roleRepository.findOne.mockResolvedValue(null);
       roleRepository.create.mockReturnValue({ id: 1, name: 'admin' });
       roleRepository.save.mockResolvedValue({ id: 1, name: 'admin' });
@@ -53,7 +54,9 @@ describe('UsersService', () => {
 
     it('should reuse an existing role instead of creating a new one', async () => {
       const dto: CreateUserDto = { email: 'user@example.com', password: 'password123', role: 'gerente' };
-      userRepository.findOne.mockResolvedValueOnce(null); // no duplicate
+      userRepository.findOne
+        .mockResolvedValueOnce(null)  // no active duplicate
+        .mockResolvedValueOnce(null); // no deleted duplicate
       roleRepository.findOne.mockResolvedValue({ id: 2, name: 'gerente' });
       userRepository.create.mockReturnValue({ id: 2, email: dto.email, role: { id: 2, name: 'gerente' } });
       userRepository.save.mockResolvedValue({ id: 2, email: dto.email, role: { id: 2, name: 'gerente' }, passwordHash: 'hashed' });
@@ -65,7 +68,9 @@ describe('UsersService', () => {
 
     it('should default to the "operador" role when none is provided', async () => {
       const dto: CreateUserDto = { email: 'noRole@example.com', password: 'password123' };
-      userRepository.findOne.mockResolvedValueOnce(null); // no duplicate
+      userRepository.findOne
+        .mockResolvedValueOnce(null)  // no active duplicate
+        .mockResolvedValueOnce(null); // no deleted duplicate
       roleRepository.findOne.mockResolvedValue({ id: 3, name: 'operador' });
       userRepository.create.mockReturnValue({ id: 3, email: dto.email });
       userRepository.save.mockResolvedValue({ id: 3, email: dto.email, passwordHash: 'hashed' });
@@ -75,11 +80,27 @@ describe('UsersService', () => {
       expect(roleRepository.findOne).toHaveBeenCalledWith({ where: { name: 'operador' } });
     });
 
-    it('should throw ConflictException when email already exists', async () => {
+    it('should throw ConflictException when email already exists on an active user', async () => {
       const dto: CreateUserDto = { email: 'taken@example.com', password: 'password123' };
       userRepository.findOne.mockResolvedValueOnce({ id: 99, email: 'taken@example.com' });
 
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should restore a soft-deleted user with the same email', async () => {
+      const dto: CreateUserDto = { email: 'deleted@example.com', password: 'newPass123', role: 'gerente' };
+      const deletedUser = { id: 10, email: dto.email, passwordHash: 'oldHash', deletedAt: new Date(), isActive: false };
+      userRepository.findOne
+        .mockResolvedValueOnce(null)              // no active duplicate
+        .mockResolvedValueOnce(deletedUser as any); // found deleted
+      roleRepository.findOne.mockResolvedValue({ id: 2, name: 'gerente' });
+      userRepository.save.mockImplementation(async (u: any) => u);
+
+      const result = await service.create(dto);
+
+      expect(result.deletedAt).toBeNull();
+      expect((result as any).isActive).toBe(true);
+      expect((result as any).passwordHash).toBeUndefined();
     });
   });
 

@@ -43,10 +43,14 @@ export class InputsService {
     await this.cycleRepo.update(cycleId, { currentCostPerArea });
   }
 
+  private normalizeDate(date: string): string {
+    return date.split('T')[0];
+  }
+
   async create(cycleId: number, dto: CreateInputDto): Promise<Input> {
     const cycle = await this.getCycleAndValidateOpen(cycleId);
 
-    if (new Date(dto.applicationDate) < new Date(cycle.sowingDate)) {
+    if (this.normalizeDate(dto.applicationDate) < this.normalizeDate(cycle.sowingDate)) {
       throw new BadRequestException(
         `applicationDate cannot be before the cycle sowingDate (${cycle.sowingDate})`
       );
@@ -94,7 +98,7 @@ export class InputsService {
     const input = await this.findOne(cycleId, id);
 
     const checkDate = dto.applicationDate || input.applicationDate;
-    if (new Date(checkDate) < new Date(cycle.sowingDate)) {
+    if (this.normalizeDate(checkDate) < this.normalizeDate(cycle.sowingDate)) {
       throw new BadRequestException(
         `applicationDate cannot be before the cycle sowingDate (${cycle.sowingDate})`
       );

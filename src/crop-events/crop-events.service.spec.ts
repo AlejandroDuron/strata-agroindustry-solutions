@@ -29,7 +29,7 @@ describe('CropEventsService', () => {
 
   describe('create', () => {
     it('should create an event when the cycle is open', async () => {
-      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN' } as any);
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01' } as any);
       eventRepo.create.mockReturnValue({ ...dto, productionCycleId: 1 } as any);
       eventRepo.save.mockResolvedValue({ id: 1, ...dto, productionCycleId: 1 } as any);
 
@@ -88,8 +88,8 @@ describe('CropEventsService', () => {
 
   describe('update', () => {
     it('should update an event when the cycle is open', async () => {
-      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN' } as any);
-      const event = { id: 1, description: 'old' };
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01' } as any);
+      const event = { id: 1, description: 'old', eventDate: '2026-07-21' };
       eventRepo.findOne.mockResolvedValue(event as any);
       eventRepo.save.mockImplementation(async (e: any) => e);
 

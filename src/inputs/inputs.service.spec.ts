@@ -37,7 +37,7 @@ describe('InputsService', () => {
 
   describe('create', () => {
     it('should create an input and recalculate the cycle cost', async () => {
-      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', field: { area: 5 } } as any);
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01', field: { area: 5 } } as any);
       inputRepo.create.mockReturnValue({ ...dto, productionCycleId: 1 } as any);
       inputRepo.save.mockResolvedValue({ id: 1, ...dto, productionCycleId: 1 } as any);
       inputRepo.find.mockResolvedValue([{ quantity: 10, unitCost: 15 }] as any);
@@ -98,7 +98,7 @@ describe('InputsService', () => {
 
   describe('update', () => {
     it('should update an input and recalculate the cycle cost', async () => {
-      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', field: { area: 5 } } as any);
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01', field: { area: 5 } } as any);
       inputRepo.findOne.mockResolvedValue({ id: 1, ...dto } as any);
       inputRepo.save.mockImplementation(async (i: any) => i);
       inputRepo.find.mockResolvedValue([{ quantity: 20, unitCost: 15 }] as any);

@@ -17,7 +17,27 @@ export class FarmsService {
   ) {}
 
   async create(dto: CreateFarmDto): Promise<Farm> {
-    await this.throwIfNameTaken(dto.name);
+    // Check if an active farm with the same name exists
+    const activeDuplicate = await this.farmRepository.findOne({
+      where: { name: dto.name },
+    });
+    if (activeDuplicate) {
+      throw new ConflictException(
+        `A farm with the name "${dto.name}" already exists`,
+      );
+    }
+
+    // Check if a soft-deleted farm with the same name exists — restore it
+    const deletedDuplicate = await this.farmRepository.findOne({
+      where: { name: dto.name },
+      withDeleted: true,
+    });
+    if (deletedDuplicate) {
+      deletedDuplicate.deletedAt = null;
+      deletedDuplicate.location = dto.location;
+      return this.farmRepository.save(deletedDuplicate);
+    }
+
     const farm = this.farmRepository.create(dto);
     return this.farmRepository.save(farm);
   }
@@ -43,7 +63,7 @@ export class FarmsService {
     const farm = await this.findNonDeletedOrThrow(id);
 
     if (dto.name && dto.name !== farm.name) {
-      await this.throwIfNameTaken(dto.name);
+      await this.throwIfNameTaken(dto.name, id);
     }
 
     Object.assign(farm, dto);
@@ -82,11 +102,17 @@ export class FarmsService {
     return farm;
   }
 
-  private async throwIfNameTaken(name: string): Promise<void> {
-    const existing = await this.farmRepository.findOne({
-      where: { name },
-      withDeleted: true,
-    });
+  private async throwIfNameTaken(name: string, excludeId?: number): Promise<void> {
+    const query = this.farmRepository
+      .createQueryBuilder('farm')
+      .where('farm.name = :name', { name })
+      .andWhere('farm.deletedAt IS NULL');
+
+    if (excludeId) {
+      query.andWhere('farm.id != :excludeId', { excludeId });
+    }
+
+    const existing = await query.getOne();
 
     if (existing) {
       throw new ConflictException(
