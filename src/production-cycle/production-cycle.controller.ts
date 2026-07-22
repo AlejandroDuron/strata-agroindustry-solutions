@@ -48,6 +48,7 @@ export class ProductionCycleController {
 
   @Get()
   @ApiOperation({ summary: 'List all production cycles' })
+  @ApiResponse({ status: 200, description: 'List of production cycles' })
   findAll() {
     return this.productionCycleService.findAll();
   }
@@ -62,7 +63,9 @@ export class ProductionCycleController {
   @Patch(':id')
   @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Update a production cycle' })
+  @ApiResponse({ status: 200, description: 'Cycle updated successfully' })
   @ApiResponse({ status: 400, description: 'Cannot modify a closed cycle' })
+  @ApiResponse({ status: 404, description: 'Cycle not found' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateProductionCycleDto,
@@ -89,6 +92,8 @@ export class ProductionCycleController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a production cycle (soft delete by default, hard delete with ?hard=true)' })
+  @ApiResponse({ status: 200, description: 'Cycle deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Cycle not found' })
   remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {
     return this.productionCycleService.remove(id, hard === 'true');
   }

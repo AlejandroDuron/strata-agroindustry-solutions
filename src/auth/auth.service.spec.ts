@@ -1,4 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 
@@ -22,7 +23,7 @@ describe('AuthService', () => {
       id: 1,
       email: 'test@example.com',
       passwordHash: await require('bcryptjs').hash('password123', 10),
-      role: { name: 'user' },
+      role: { name: 'operador' },
     });
 
     const result = await service.validateUser('test@example.com', 'password123');
@@ -30,33 +31,33 @@ describe('AuthService', () => {
     expect(result).toEqual({
       id: 1,
       email: 'test@example.com',
-      role: { name: 'user' },
+      role: { name: 'operador' },
     });
   });
 
-  it('should return null when email does not exist', async () => {
+  it('should throw UnauthorizedException when email does not exist', async () => {
     usersService.findByEmail.mockResolvedValue(undefined);
 
-    const result = await service.validateUser('missing@example.com', 'password123');
-
-    expect(result).toBeNull();
+    await expect(
+      service.validateUser('missing@example.com', 'password123'),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
-  it('should return null when password is incorrect', async () => {
+  it('should throw UnauthorizedException when password is incorrect', async () => {
     usersService.findByEmail.mockResolvedValue({
       id: 1,
       email: 'test@example.com',
       passwordHash: await require('bcryptjs').hash('password123', 10),
-      role: { name: 'user' },
+      role: { name: 'operador' },
     });
 
-    const result = await service.validateUser('test@example.com', 'wrongPassword');
-
-    expect(result).toBeNull();
+    await expect(
+      service.validateUser('test@example.com', 'wrongPassword'),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('should generate a JWT access token on login', async () => {
-    const token = await service.login({ id: 1, email: 'token@example.com', role: { name: 'user' } });
+    const token = await service.login({ id: 1, email: 'token@example.com', role: { name: 'operador' } });
 
     expect(token.access_token).toBeDefined();
     expect(typeof token.access_token).toBe('string');

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -32,8 +32,16 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: createUserDto.email },
+      withDeleted: true,
+    });
+    if (existingUser) {
+      throw new ConflictException(`A user with email "${createUserDto.email}" already exists`);
+    }
+
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const role = await this.getOrCreateRole(createUserDto.role ?? 'user');
+    const role = await this.getOrCreateRole(createUserDto.role ?? 'operador');
 
     const user = this.userRepository.create({
       name: createUserDto.email.split('@')[0],
@@ -75,7 +83,14 @@ export class UsersService {
     if (updateUserDto.password) {
       user.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
     }
-    if (updateUserDto.email) {
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const duplicate = await this.userRepository.findOne({
+        where: { email: updateUserDto.email },
+        withDeleted: true,
+      });
+      if (duplicate) {
+        throw new ConflictException(`A user with email "${updateUserDto.email}" already exists`);
+      }
       user.email = updateUserDto.email;
     }
     if (updateUserDto.role) {

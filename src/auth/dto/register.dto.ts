@@ -1,19 +1,14 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsIn } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: 'nuevo@finca.com', description: 'Correo electrónico del usuario' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'strongPassword123' })
+  @ApiProperty({ example: 'miPassword123', description: 'Contraseña (mínimo 6 caracteres)' })
   @IsNotEmpty()
   @IsString()
   @MinLength(6)
   password: string;
-
-  @ApiPropertyOptional({ example: 'user', enum: ['user'] })
-  @IsOptional()
-  @IsIn(['user'], { message: 'Registration only allows "user" role' })
-  role?: 'user';
 }

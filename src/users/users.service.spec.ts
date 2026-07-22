@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -33,6 +33,8 @@ describe('UsersService', () => {
         role: 'admin',
       };
 
+      // First findOne checks for duplicate email — no duplicate
+      userRepository.findOne.mockResolvedValueOnce(null);
       roleRepository.findOne.mockResolvedValue(null);
       roleRepository.create.mockReturnValue({ id: 1, name: 'admin' });
       roleRepository.save.mockResolvedValue({ id: 1, name: 'admin' });
@@ -51,6 +53,7 @@ describe('UsersService', () => {
 
     it('should reuse an existing role instead of creating a new one', async () => {
       const dto: CreateUserDto = { email: 'user@example.com', password: 'password123', role: 'gerente' };
+      userRepository.findOne.mockResolvedValueOnce(null); // no duplicate
       roleRepository.findOne.mockResolvedValue({ id: 2, name: 'gerente' });
       userRepository.create.mockReturnValue({ id: 2, email: dto.email, role: { id: 2, name: 'gerente' } });
       userRepository.save.mockResolvedValue({ id: 2, email: dto.email, role: { id: 2, name: 'gerente' }, passwordHash: 'hashed' });
@@ -60,15 +63,23 @@ describe('UsersService', () => {
       expect(roleRepository.create).not.toHaveBeenCalled();
     });
 
-    it('should default to the "user" role when none is provided', async () => {
+    it('should default to the "operador" role when none is provided', async () => {
       const dto: CreateUserDto = { email: 'noRole@example.com', password: 'password123' };
-      roleRepository.findOne.mockResolvedValue({ id: 3, name: 'user' });
+      userRepository.findOne.mockResolvedValueOnce(null); // no duplicate
+      roleRepository.findOne.mockResolvedValue({ id: 3, name: 'operador' });
       userRepository.create.mockReturnValue({ id: 3, email: dto.email });
       userRepository.save.mockResolvedValue({ id: 3, email: dto.email, passwordHash: 'hashed' });
 
       await service.create(dto);
 
-      expect(roleRepository.findOne).toHaveBeenCalledWith({ where: { name: 'user' } });
+      expect(roleRepository.findOne).toHaveBeenCalledWith({ where: { name: 'operador' } });
+    });
+
+    it('should throw ConflictException when email already exists', async () => {
+      const dto: CreateUserDto = { email: 'taken@example.com', password: 'password123' };
+      userRepository.findOne.mockResolvedValueOnce({ id: 99, email: 'taken@example.com' });
+
+      await expect(service.create(dto)).rejects.toThrow(ConflictException);
     });
   });
 
@@ -126,8 +137,11 @@ describe('UsersService', () => {
 
   describe('update', () => {
     it('should update email, password, and role', async () => {
-      const existingUser = { id: 1, email: 'old@example.com', passwordHash: 'old', role: { id: 1, name: 'user' } };
-      userRepository.findOne.mockResolvedValue(existingUser);
+      const existingUser = { id: 1, email: 'old@example.com', passwordHash: 'old', role: { id: 1, name: 'operador' } };
+      // First call: find user by id
+      userRepository.findOne.mockResolvedValueOnce(existingUser);
+      // Second call: check for duplicate email — no duplicate
+      userRepository.findOne.mockResolvedValueOnce(null);
       roleRepository.findOne.mockResolvedValue({ id: 2, name: 'admin' });
       userRepository.save.mockImplementation(async (u: any) => u);
 
@@ -136,6 +150,15 @@ describe('UsersService', () => {
 
       expect(result.email).toBe('new@example.com');
       expect((result as any).passwordHash).toBeUndefined();
+    });
+
+    it('should throw ConflictException when updating to an existing email', async () => {
+      const existingUser = { id: 1, email: 'old@example.com', passwordHash: 'old', role: { id: 1, name: 'operador' } };
+      userRepository.findOne.mockResolvedValueOnce(existingUser);
+      userRepository.findOne.mockResolvedValueOnce({ id: 2, email: 'taken@example.com' }); // duplicate found
+
+      const dto: UpdateUserDto = { email: 'taken@example.com' };
+      await expect(service.update('1', dto)).rejects.toThrow(ConflictException);
     });
 
     it('should throw NotFoundException when the user to update does not exist', async () => {
