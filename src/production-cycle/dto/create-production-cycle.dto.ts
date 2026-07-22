@@ -9,7 +9,8 @@ import {
 @ValidatorConstraint({ name: 'isAfterSowingDate', async: false })
 class IsAfterSowingDate implements ValidatorConstraintInterface {
   validate(value: string, args: ValidationArguments) {
-    const obj = args.object as CreateProductionCycleDto;
+    const obj = args.object as any;
+    if (!obj.sowingDate) return true;
     return new Date(value) > new Date(obj.sowingDate);
   }
 

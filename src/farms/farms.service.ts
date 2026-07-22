@@ -14,7 +14,7 @@ export class FarmsService {
   constructor(
     @InjectRepository(Farm)
     private readonly farmRepository: Repository<Farm>,
-  ) {}
+  ) { }
 
   async create(dto: CreateFarmDto): Promise<Farm> {
     // Check if an active farm with the same name exists

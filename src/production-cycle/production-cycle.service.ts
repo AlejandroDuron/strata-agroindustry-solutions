@@ -129,6 +129,22 @@ export class ProductionCycleService {
 
 
 
+    const finalSowingDate = dto.sowingDate || cycle.sowingDate;
+    const finalHarvestDate = dto.expectedHarvestDate || cycle.expectedHarvestDate;
+    
+    if (new Date(finalHarvestDate) <= new Date(finalSowingDate)) {
+      throw new BadRequestException('expectedHarvestDate must be after sowingDate');
+    }
+
+    if (dto.sowingDate) {
+      const newSowingDate = new Date(dto.sowingDate);
+      const invalidInput = cycle.inputs?.find(i => new Date(i.applicationDate) < newSowingDate);
+      if (invalidInput) throw new BadRequestException('Cannot move sowingDate to a date after existing inputs');
+
+      const invalidEvent = cycle.cropEvents?.find(e => new Date(e.eventDate) < newSowingDate);
+      if (invalidEvent) throw new BadRequestException('Cannot move sowingDate to a date after existing crop events');
+    }
+
     if (dto.sowingDate) cycle.sowingDate = dto.sowingDate;
     if (dto.expectedHarvestDate)
       cycle.expectedHarvestDate = dto.expectedHarvestDate;
@@ -221,11 +237,12 @@ export class ProductionCycleService {
       // 4. Gross margin
       const grossMargin = Math.round((totalRevenue - totalCost) * 100) / 100;
 
-      // 5. Real yield (total quantity obtained)
-      const realYield = cycle.harvests.reduce(
-        (sum, h) => sum + h.quantityObtained,
-        0,
-      );
+      const realYield = Math.round(
+        cycle.harvests.reduce(
+          (sum, h) => sum + h.quantityObtained,
+          0,
+        ) * 100
+      ) / 100;
 
       // 6. Compare with historical average for the same field
       const historicalAvgYield = await this.getHistoricalAverageYield(
@@ -293,6 +310,6 @@ export class ProductionCycleService {
       return sum + cycleYield;
     }, 0);
 
-    return totalYield / otherCycles.length;
+    return Math.round((totalYield / otherCycles.length) * 100) / 100;
   }
 }

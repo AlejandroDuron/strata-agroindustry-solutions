@@ -69,6 +69,17 @@ export class FieldsService {
 
   async remove(id: number, hard = false): Promise<Field> {
     const field = await this.findNonDeletedOrThrow(id);
+
+    const openCyclesCount = await this.cycleRepository.count({
+      where: { fieldId: id, status: 'OPEN' },
+    });
+
+    if (openCyclesCount > 0) {
+      throw new ConflictException(
+        'Cannot delete a field that has open production cycles',
+      );
+    }
+
     if (hard) {
       await this.fieldRepository.remove(field);
     } else {

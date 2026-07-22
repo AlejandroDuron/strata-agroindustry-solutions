@@ -144,6 +144,7 @@ describe('FieldsService', () => {
     it('should soft remove an existing field', async () => {
       const field = { id: 1, name: 'Lote 1' };
       fieldRepository.findOne.mockResolvedValue(field as any);
+      cycleRepository.count.mockResolvedValue(0);
       fieldRepository.softRemove.mockResolvedValue(field as any);
 
       const result = await service.remove(1);
@@ -155,12 +156,22 @@ describe('FieldsService', () => {
     it('should hard remove an existing field when hard=true', async () => {
       const field = { id: 1, name: 'Lote 1' };
       fieldRepository.findOne.mockResolvedValue(field as any);
+      cycleRepository.count.mockResolvedValue(0);
       (fieldRepository as any).remove = jest.fn().mockResolvedValue(field);
 
       const result = await service.remove(1, true);
 
       expect((fieldRepository as any).remove).toHaveBeenCalledWith(field);
       expect(result).toEqual(field);
+    });
+
+    it('should throw ConflictException when trying to delete a field with open cycles', async () => {
+      const field = { id: 1, name: 'Lote 1' };
+      fieldRepository.findOne.mockResolvedValue(field as any);
+      cycleRepository.count.mockResolvedValue(1); // open cycle exists
+
+      await expect(service.remove(1)).rejects.toThrow(ConflictException);
+      expect(fieldRepository.softRemove).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when the field to remove does not exist', async () => {
