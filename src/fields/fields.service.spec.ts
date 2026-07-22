@@ -35,6 +35,7 @@ describe('FieldsService', () => {
     it('should create a field when the farm is active', async () => {
       const dto = { farmId: 1, name: 'Lote 1', area: 5.5 };
       farmsService.findActiveOrThrow.mockResolvedValue({ id: 1 } as any);
+      fieldRepository.findOne.mockResolvedValue(null);
       fieldRepository.create.mockReturnValue(dto as any);
       fieldRepository.save.mockResolvedValue({ id: 1, ...dto } as any);
 
@@ -87,7 +88,10 @@ describe('FieldsService', () => {
   describe('update', () => {
     it('should update a field without checking cycles when area is unchanged', async () => {
       const field = { id: 1, name: 'Lote 1', area: 5.5 };
-      fieldRepository.findOne.mockResolvedValue(field as any);
+      fieldRepository.findOne.mockImplementation(async (opts: any) => {
+        if (opts.where.id === 1) return field;
+        return null;
+      });
       fieldRepository.save.mockResolvedValue({ ...field, name: 'Lote Norte' } as any);
 
       const result = await service.update(1, { name: 'Lote Norte' } as any);

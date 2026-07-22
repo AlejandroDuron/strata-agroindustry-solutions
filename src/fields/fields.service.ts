@@ -25,6 +25,7 @@ export class FieldsService {
 
   async create(dto: CreateFieldDto): Promise<Field> {
     await this.farmsService.findActiveOrThrow(dto.farmId);
+    await this.throwIfNameTaken(dto.name);
 
     const field = this.fieldRepository.create(dto);
     return this.fieldRepository.save(field);
@@ -53,6 +54,10 @@ export class FieldsService {
 
   async update(id: number, dto: UpdateFieldDto): Promise<Field> {
     const field = await this.findNonDeletedOrThrow(id);
+
+    if (dto.name && dto.name !== field.name) {
+      await this.throwIfNameTaken(dto.name);
+    }
 
     if (dto.area !== undefined && dto.area !== field.area) {
       await this.throwIfHasOpenCycles(id);
@@ -91,6 +96,19 @@ export class FieldsService {
       throw new ConflictException(
         'Cannot modify the area while open production cycles exist. ' +
         'The cost per area depends on this value.',
+      );
+    }
+  }
+
+  private async throwIfNameTaken(name: string): Promise<void> {
+    const existing = await this.fieldRepository.findOne({
+      where: { name },
+      withDeleted: true,
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        `A field with the name "${name}" already exists`,
       );
     }
   }

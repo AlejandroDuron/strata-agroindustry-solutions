@@ -22,7 +22,7 @@ export class Field {
   @JoinColumn({ name: 'farm_id' })
   farm: Farm;
 
-  @Column({ length: 100 })
+  @Column({ unique: true, length: 100 })
   name: string;
 
   @Column('float')
