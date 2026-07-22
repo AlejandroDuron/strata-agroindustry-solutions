@@ -1,7 +1,8 @@
 # Strata Agroindustry Solutions API
 
 Backend for agricultural farms, cooperatives, and agro-exporters that need to digitize their field management and obtain real financial information from each production cycle.
-(This project is mostly in English because we want to include it in our resumes, and international recruiters might check this repository as proof of our skills, so we are preparing in advance.)
+
+> **(This project is mostly in English because we want to include it in our resumes, and international recruiters might check this repository as proof of our skills, so we are preparing in advance.)**
 
 ## Tech Stack
 
