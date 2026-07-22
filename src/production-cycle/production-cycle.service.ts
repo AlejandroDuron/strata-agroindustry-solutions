@@ -69,13 +69,15 @@ export class ProductionCycleService {
     return this.cycleRepo.save(cycle);
   }
 
-  async findAll(): Promise<ProductionCycle[]> {
-    return this.cycleRepo.find({
-      relations: { field: true, crop: true },
+  async findAll(): Promise<any[]> {
+    const cycles = await this.cycleRepo.find({
+      relations: { field: true, crop: true, inputs: true, harvests: true },
     });
+
+    return cycles.map((cycle) => this.attachFinancialSummary(cycle));
   }
 
-  async findOne(id: number): Promise<ProductionCycle> {
+  async findOne(id: number): Promise<any> {
     const cycle = await this.cycleRepo.findOne({
       where: { id },
       relations: { field: true, crop: true, inputs: true, harvests: true, cropEvents: true },
@@ -87,7 +89,26 @@ export class ProductionCycleService {
       );
     }
 
-    return cycle;
+    return this.attachFinancialSummary(cycle);
+  }
+
+  private attachFinancialSummary(cycle: ProductionCycle) {
+    const totalRevenue = (cycle.harvests ?? []).reduce(
+      (sum, h) => sum + h.quantitySold * h.unitSalePrice,
+      0,
+    );
+    const totalCost = (cycle.inputs ?? []).reduce(
+      (sum, i) => sum + i.quantity * i.unitCost,
+      0,
+    );
+    const grossMargin = totalRevenue - totalCost;
+
+    return {
+      ...cycle,
+      totalRevenue,
+      totalCost,
+      grossMargin,
+    };
   }
 
   async update(

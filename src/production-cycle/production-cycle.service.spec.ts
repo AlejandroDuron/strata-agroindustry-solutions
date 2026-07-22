@@ -100,7 +100,7 @@ describe('ProductionCycleService', () => {
 
       const result = await service.findAll();
 
-      expect(result).toEqual(cycles);
+      expect(result).toEqual([{ id: 1, totalRevenue: 0, totalCost: 0, grossMargin: 0 }]);
     });
   });
 
@@ -111,7 +111,7 @@ describe('ProductionCycleService', () => {
 
       const result = await service.findOne(1);
 
-      expect(result).toEqual(cycle);
+      expect(result).toEqual({ id: 1, totalRevenue: 0, totalCost: 0, grossMargin: 0 });
     });
 
     it('should throw NotFoundException when the cycle does not exist', async () => {
@@ -148,7 +148,9 @@ describe('ProductionCycleService', () => {
 
       await service.remove(1);
 
-      expect(cycleRepo.softRemove).toHaveBeenCalledWith(cycle);
+      expect(cycleRepo.softRemove).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, status: 'OPEN' }),
+      );
     });
   });
 
