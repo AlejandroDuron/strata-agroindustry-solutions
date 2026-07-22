@@ -131,7 +131,7 @@ export class ProductionCycleService {
 
     const finalSowingDate = dto.sowingDate || cycle.sowingDate;
     const finalHarvestDate = dto.expectedHarvestDate || cycle.expectedHarvestDate;
-    
+
     if (new Date(finalHarvestDate) <= new Date(finalSowingDate)) {
       throw new BadRequestException('expectedHarvestDate must be after sowingDate');
     }
@@ -237,6 +237,7 @@ export class ProductionCycleService {
       // 4. Gross margin
       const grossMargin = Math.round((totalRevenue - totalCost) * 100) / 100;
 
+      // 5. Real yield (total quantity obtained)
       const realYield = Math.round(
         cycle.harvests.reduce(
           (sum, h) => sum + h.quantityObtained,
