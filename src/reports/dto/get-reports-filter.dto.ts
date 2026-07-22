@@ -3,14 +3,7 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GetReportsFilterDto {
-    @ApiPropertyOptional({ description: 'ID de la finca para filtrar el resumen financiero' })
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    farmId?: number;
-
-    @ApiPropertyOptional({ description: 'ID del lote para obtener el histórico de rendimiento' })
+    @ApiPropertyOptional({ description: 'ID del lote para filtrar resultados' })
     @IsOptional()
     @Type(() => Number)
     @IsInt()

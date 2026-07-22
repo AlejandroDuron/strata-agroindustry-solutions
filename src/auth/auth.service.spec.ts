@@ -62,4 +62,14 @@ describe('AuthService', () => {
     expect(token.access_token).toBeDefined();
     expect(typeof token.access_token).toBe('string');
   });
+
+  it('should delegate registration to UsersService.create', async () => {
+    const dto = { email: 'reg@example.com', password: 'Pass123!', role: 'operador' };
+    usersService.create = jest.fn().mockResolvedValue({ id: 1, email: dto.email });
+
+    const result = await service.register(dto as any);
+
+    expect(usersService.create).toHaveBeenCalledWith(dto);
+    expect(result).toEqual({ id: 1, email: dto.email });
+  });
 });

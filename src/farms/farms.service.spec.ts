@@ -153,6 +153,17 @@ describe('FarmsService', () => {
       expect(result).toEqual(farm);
     });
 
+    it('should hard remove an existing farm when hard=true', async () => {
+      const farm = { id: 1, name: 'Finca El Roble' };
+      farmRepository.findOne.mockResolvedValue(farm as any);
+      (farmRepository as any).remove = jest.fn().mockResolvedValue(farm);
+
+      const result = await service.remove(1, true);
+
+      expect((farmRepository as any).remove).toHaveBeenCalledWith(farm);
+      expect(result).toEqual(farm);
+    });
+
     it('should throw NotFoundException when the farm to remove does not exist', async () => {
       farmRepository.findOne.mockResolvedValue(null);
 

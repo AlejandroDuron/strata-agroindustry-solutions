@@ -13,6 +13,7 @@ import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -71,6 +72,7 @@ export class UsersController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a user (soft delete by default, hard delete with ?hard=true)' })
+  @ApiQuery({ name: 'hard', required: false, type: String, description: 'Set to "true" for permanent deletion' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   remove(@Param('id') id: string, @Query('hard') hard?: string) {

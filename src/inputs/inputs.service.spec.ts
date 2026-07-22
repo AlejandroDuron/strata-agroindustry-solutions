@@ -59,6 +59,25 @@ describe('InputsService', () => {
 
       await expect(service.create(1, dto as any)).rejects.toThrow(BadRequestException);
     });
+
+    it('should throw BadRequestException when applicationDate is before the cycle sowingDate', async () => {
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-08-01', field: { area: 5 } } as any);
+
+      await expect(
+        service.create(1, { ...dto, applicationDate: '2026-07-15' } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should set currentCostPerArea to 0 when field area is 0', async () => {
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01', field: { area: 0 } } as any);
+      inputRepo.create.mockReturnValue({ ...dto, productionCycleId: 1 } as any);
+      inputRepo.save.mockResolvedValue({ id: 1, ...dto, productionCycleId: 1 } as any);
+      inputRepo.find.mockResolvedValue([{ quantity: 10, unitCost: 15 }] as any);
+
+      await service.create(1, dto as any);
+
+      expect(cycleRepo.update).toHaveBeenCalledWith(1, { currentCostPerArea: 0 });
+    });
   });
 
   describe('findAll', () => {
@@ -99,7 +118,7 @@ describe('InputsService', () => {
   describe('update', () => {
     it('should update an input and recalculate the cycle cost', async () => {
       cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01', field: { area: 5 } } as any);
-      inputRepo.findOne.mockResolvedValue({ id: 1, ...dto } as any);
+      inputRepo.findOne.mockResolvedValue({ id: 1, ...dto, applicationDate: '2026-07-21' } as any);
       inputRepo.save.mockImplementation(async (i: any) => i);
       inputRepo.find.mockResolvedValue([{ quantity: 20, unitCost: 15 }] as any);
 
@@ -113,6 +132,33 @@ describe('InputsService', () => {
       cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'CLOSED' } as any);
 
       await expect(service.update(1, 1, {} as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when updated applicationDate is before sowingDate', async () => {
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-06-01', field: { area: 5 } } as any);
+      inputRepo.findOne.mockResolvedValue({ id: 1, ...dto, applicationDate: '2026-07-21' } as any);
+
+      await expect(
+        service.update(1, 1, { applicationDate: '2026-05-15' } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when the input does not exist', async () => {
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01', field: { area: 5 } } as any);
+      inputRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.update(1, 999, {} as any)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update the inputType when type is changed', async () => {
+      cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'OPEN', sowingDate: '2026-01-01', field: { area: 5 } } as any);
+      inputRepo.findOne.mockResolvedValue({ id: 1, ...dto, inputType: InputType.FERTILIZER, applicationDate: '2026-07-21' } as any);
+      inputRepo.save.mockImplementation(async (i: any) => i);
+      inputRepo.find.mockResolvedValue([{ quantity: 10, unitCost: 15 }] as any);
+
+      const result = await service.update(1, 1, { type: InputType.PESTICIDE } as any);
+
+      expect(result.inputType).toBe(InputType.PESTICIDE);
     });
   });
 

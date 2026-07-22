@@ -116,13 +116,24 @@ describe('CropsService', () => {
   });
 
   describe('remove', () => {
-    it('should remove an existing crop', async () => {
+    it('should soft remove an existing crop by default', async () => {
       const crop = { id: 1, type: 'Coffee', variety: 'Arabica' };
       cropRepository.findOne.mockResolvedValue(crop as any);
 
       await service.remove(1);
 
       expect(cropRepository.softRemove).toHaveBeenCalledWith(crop);
+      expect(cropRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('should hard remove an existing crop when hard=true', async () => {
+      const crop = { id: 1, type: 'Coffee', variety: 'Arabica' };
+      cropRepository.findOne.mockResolvedValue(crop as any);
+
+      await service.remove(1, true);
+
+      expect(cropRepository.remove).toHaveBeenCalledWith(crop);
+      expect(cropRepository.softRemove).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when the crop to remove does not exist', async () => {

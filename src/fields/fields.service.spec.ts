@@ -51,6 +51,16 @@ describe('FieldsService', () => {
       await expect(service.create({ farmId: 999 } as any)).rejects.toThrow(NotFoundException);
       expect(fieldRepository.save).not.toHaveBeenCalled();
     });
+
+    it('should throw ConflictException when field name already exists', async () => {
+      farmsService.findActiveOrThrow.mockResolvedValue({ id: 1 } as any);
+      fieldRepository.findOne.mockResolvedValue({ id: 5, name: 'Lote 1' } as any);
+
+      await expect(
+        service.create({ farmId: 1, name: 'Lote 1', area: 5 } as any),
+      ).rejects.toThrow(ConflictException);
+      expect(fieldRepository.save).not.toHaveBeenCalled();
+    });
   });
 
   describe('findAllByFarm', () => {
@@ -139,6 +149,17 @@ describe('FieldsService', () => {
       const result = await service.remove(1);
 
       expect(fieldRepository.softRemove).toHaveBeenCalledWith(field);
+      expect(result).toEqual(field);
+    });
+
+    it('should hard remove an existing field when hard=true', async () => {
+      const field = { id: 1, name: 'Lote 1' };
+      fieldRepository.findOne.mockResolvedValue(field as any);
+      (fieldRepository as any).remove = jest.fn().mockResolvedValue(field);
+
+      const result = await service.remove(1, true);
+
+      expect((fieldRepository as any).remove).toHaveBeenCalledWith(field);
       expect(result).toEqual(field);
     });
 

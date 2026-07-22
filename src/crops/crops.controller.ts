@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -74,6 +75,7 @@ export class CropsController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a crop (soft delete by default, hard delete with ?hard=true)' })
+  @ApiQuery({ name: 'hard', required: false, type: String, description: 'Set to "true" for permanent deletion' })
   @ApiResponse({ status: 200, description: 'Crop deleted successfully' })
   @ApiResponse({ status: 404, description: 'Crop not found' })
   remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {

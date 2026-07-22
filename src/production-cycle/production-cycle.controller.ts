@@ -14,6 +14,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiQuery,
   ApiBearerAuth,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
@@ -55,6 +56,7 @@ export class ProductionCycleController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a production cycle by ID' })
+  @ApiResponse({ status: 200, description: 'Production cycle details' })
   @ApiResponse({ status: 404, description: 'Cycle not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productionCycleService.findOne(id);
@@ -92,6 +94,7 @@ export class ProductionCycleController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a production cycle (soft delete by default, hard delete with ?hard=true)' })
+  @ApiQuery({ name: 'hard', required: false, type: String, description: 'Set to "true" for permanent deletion' })
   @ApiResponse({ status: 200, description: 'Cycle deleted successfully' })
   @ApiResponse({ status: 404, description: 'Cycle not found' })
   remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {

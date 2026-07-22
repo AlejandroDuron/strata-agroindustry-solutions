@@ -61,13 +61,23 @@ describe('FieldsController', () => {
     expect(result).toEqual({ id: 1, ...dto });
   });
 
-  it('should remove a field', async () => {
+  it('should remove a field (soft delete)', async () => {
     const field = { id: 1, name: 'Lote 1' };
     service.remove.mockResolvedValue(field as any);
 
     const result = await controller.remove(1);
 
     expect(service.remove).toHaveBeenCalledWith(1, false);
+    expect(result).toEqual(field);
+  });
+
+  it('should remove a field (hard delete)', async () => {
+    const field = { id: 1, name: 'Lote 1' };
+    service.remove.mockResolvedValue(field as any);
+
+    const result = await controller.remove(1, 'true');
+
+    expect(service.remove).toHaveBeenCalledWith(1, true);
     expect(result).toEqual(field);
   });
 });

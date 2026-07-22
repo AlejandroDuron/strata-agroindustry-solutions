@@ -61,11 +61,19 @@ describe('CropsController', () => {
     expect(result).toEqual({ id: 1, ...dto });
   });
 
-  it('should remove a crop', async () => {
+  it('should remove a crop (soft delete)', async () => {
     service.remove.mockResolvedValue(undefined);
 
     await controller.remove(1);
 
     expect(service.remove).toHaveBeenCalledWith(1, false);
+  });
+
+  it('should remove a crop (hard delete)', async () => {
+    service.remove.mockResolvedValue(undefined);
+
+    await controller.remove(1, 'true');
+
+    expect(service.remove).toHaveBeenCalledWith(1, true);
   });
 });

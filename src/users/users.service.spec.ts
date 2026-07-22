@@ -190,13 +190,24 @@ describe('UsersService', () => {
   });
 
   describe('remove', () => {
-    it('should remove an existing user', async () => {
+    it('should soft remove an existing user by default', async () => {
       const user = { id: 1, email: 'a@example.com' };
       userRepository.findOne.mockResolvedValue(user);
 
       await service.remove('1');
 
       expect(userRepository.softRemove).toHaveBeenCalledWith(user);
+      expect(userRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('should hard remove an existing user when hard=true', async () => {
+      const user = { id: 1, email: 'a@example.com' };
+      userRepository.findOne.mockResolvedValue(user);
+
+      await service.remove('1', true);
+
+      expect(userRepository.remove).toHaveBeenCalledWith(user);
+      expect(userRepository.softRemove).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when user does not exist', async () => {

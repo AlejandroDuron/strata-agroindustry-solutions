@@ -17,6 +17,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
@@ -78,6 +79,7 @@ export class FarmsController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a farm (soft delete by default, hard delete with ?hard=true)' })
+  @ApiQuery({ name: 'hard', required: false, type: String, description: 'Set to "true" for permanent deletion' })
   @ApiResponse({ status: 200, description: 'Farm deleted' })
   @ApiResponse({ status: 404, description: 'Farm not found' })
   remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {

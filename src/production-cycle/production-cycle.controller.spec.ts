@@ -72,11 +72,19 @@ describe('ProductionCycleController', () => {
     expect(result).toEqual(closeResult);
   });
 
-  it('should remove a production cycle', async () => {
+  it('should remove a production cycle (soft delete)', async () => {
     service.remove.mockResolvedValue(undefined);
 
     await controller.remove(1);
 
     expect(service.remove).toHaveBeenCalledWith(1, false);
+  });
+
+  it('should remove a production cycle (hard delete)', async () => {
+    service.remove.mockResolvedValue(undefined);
+
+    await controller.remove(1, 'true');
+
+    expect(service.remove).toHaveBeenCalledWith(1, true);
   });
 });

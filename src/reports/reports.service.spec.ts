@@ -81,6 +81,44 @@ describe('ReportsService', () => {
       expect(result.isYieldAlertTriggered).toBe(true);
       expect(result.alertMessage).toContain('ALERTA');
     });
+
+    it('should fallback to totalHarvested/fieldArea when realYieldAtClose is null', async () => {
+      cycleRepo.find.mockResolvedValue([
+        {
+          id: 1,
+          field: { id: 1, name: 'Lote 1', area: 5 },
+          crop: { variety: 'Arabica' },
+          sowingDate: '2025-01-01',
+          expectedHarvestDate: '2025-06-01',
+          estimatedYield: 25,
+          realYieldAtClose: null,
+          harvests: [{ quantityObtained: 50 }],
+        },
+      ] as any);
+
+      const result = await service.getYieldHistory({ fieldId: 1 } as any);
+
+      expect(result.history[0].realYield).toBe(10); // 50 / 5 = 10
+    });
+
+    it('should set variancePercentage to 0% when estimatedYield is 0', async () => {
+      cycleRepo.find.mockResolvedValue([
+        {
+          id: 1,
+          field: { id: 1, name: 'Lote 1', area: 5 },
+          crop: { variety: 'Arabica' },
+          sowingDate: '2025-01-01',
+          expectedHarvestDate: '2025-06-01',
+          estimatedYield: 0,
+          realYieldAtClose: 20,
+          harvests: [],
+        },
+      ] as any);
+
+      const result = await service.getYieldHistory({ fieldId: 1 } as any);
+
+      expect(result.history[0].variancePercentage).toBe('0%');
+    });
   });
 
   describe('getFinancialSummary', () => {
@@ -139,6 +177,51 @@ describe('ReportsService', () => {
 
       const callArg = cycleRepo.find.mock.calls[0][0] as any;
       expect(callArg.where.sowingDate).toBeDefined();
+    });
+
+    it('should fallback to revenue - cost when grossMarginAtClose is null', async () => {
+      cycleRepo.find.mockResolvedValue([
+        {
+          id: 1,
+          field: { name: 'Lote 1' },
+          crop: { variety: 'Arabica' },
+          sowingDate: '2025-01-01',
+          totalRevenueAtClose: 1000,
+          totalCostAtClose: 400,
+          grossMarginAtClose: null,
+        },
+      ] as any);
+
+      const result = await service.getFinancialSummary({} as any);
+
+      expect(result.cyclesBreakdown[0].grossMargin).toBe(600); // 1000 - 400
+    });
+
+    it('should handle cycles with zero revenue (profitability = 0%)', async () => {
+      cycleRepo.find.mockResolvedValue([
+        {
+          id: 1,
+          field: { name: 'Lote 1' },
+          crop: { variety: 'Arabica' },
+          sowingDate: '2025-01-01',
+          totalRevenueAtClose: 0,
+          totalCostAtClose: 500,
+          grossMarginAtClose: -500,
+        },
+      ] as any);
+
+      const result = await service.getFinancialSummary({} as any);
+
+      expect(result.overallProfitability).toBe('0%');
+    });
+
+    it('should not apply date filter when only startDate is provided', async () => {
+      cycleRepo.find.mockResolvedValue([]);
+
+      await service.getFinancialSummary({ startDate: '2025-01-01' } as any);
+
+      const callArg = cycleRepo.find.mock.calls[0][0] as any;
+      expect(callArg.where.sowingDate).toBeUndefined();
     });
   });
 });

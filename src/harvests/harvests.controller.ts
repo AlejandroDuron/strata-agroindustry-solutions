@@ -58,6 +58,7 @@ export class HarvestsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a harvest by ID' })
+  @ApiResponse({ status: 200, description: 'Harvest found' })
   @ApiResponse({ status: 404, description: 'Harvest not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.harvestsService.findOne(id);
@@ -66,6 +67,7 @@ export class HarvestsController {
   @Patch(':id')
   @Roles('admin', 'gerente', 'operador')
   @ApiOperation({ summary: 'Update a harvest' })
+  @ApiResponse({ status: 200, description: 'Harvest updated successfully' })
   @ApiResponse({ status: 400, description: 'Cannot modify harvest in a closed cycle' })
   @ApiResponse({ status: 404, description: 'Harvest not found' })
   update(
@@ -78,6 +80,7 @@ export class HarvestsController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a harvest' })
+  @ApiResponse({ status: 200, description: 'Harvest deleted successfully' })
   @ApiResponse({ status: 400, description: 'Cannot delete harvest from a closed cycle' })
   @ApiResponse({ status: 404, description: 'Harvest not found' })
   remove(@Param('id', ParseIntPipe) id: number) {

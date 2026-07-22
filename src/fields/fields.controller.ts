@@ -81,6 +81,7 @@ export class FieldsController {
   @Delete(':id')
   @Roles('admin', 'gerente')
   @ApiOperation({ summary: 'Delete a field (soft delete by default, hard delete with ?hard=true)' })
+  @ApiQuery({ name: 'hard', required: false, type: String, description: 'Set to "true" for permanent deletion' })
   @ApiResponse({ status: 200, description: 'Field deleted' })
   @ApiResponse({ status: 404, description: 'Field not found' })
   remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {
