@@ -5,6 +5,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Field } from '../../fields/entities/field.entity';
 import { Crop } from '../../crops/entities/crop.entity';
@@ -57,6 +58,9 @@ export class ProductionCycle {
 
   @Column({ type: 'float', nullable: true })
   realYieldAtClose: number;
+
+  @DeleteDateColumn()
+  deletedAt: Date | null;
 
   @OneToMany(() => Input, (input) => input.productionCycle)
   inputs: Input[];

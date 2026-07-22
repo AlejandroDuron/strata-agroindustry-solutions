@@ -158,11 +158,73 @@ ROLE (N) ──── (N) PERMISSION
 
 ## Roles and Permissions
 
-| Role | Access |
-|------|--------|
-| `admin` | Full access — user management, farms, cycles, and reports |
-| `agronomist` | Manage production cycles, inputs, events, and harvests |
-| `viewer` | Read-only access to all data |
+### Roles
+
+| Role | Description |
+|------|-------------|
+| `admin` | Full access — user management, resource deletion, and reports |
+| `gerente` | Farm, field, crop, and cycle management plus reports. Cannot delete most resources |
+| `operador` | Operational recording: harvests, crop events, and inputs |
+| `auditor` | Read-only access to financial and yield reports |
+
+> `GET` endpoints (lists and details) without a `@Roles` decorator are accessible to **any authenticated user**, regardless of role.
+
+### Permissions Matrix
+
+| Module | Action | Endpoint | admin | gerente | operador | auditor |
+|--------|--------|----------|:-----:|:-------:|:--------:|:-------:|
+| **Auth** | Register | `POST /auth/register` | Yes | Yes | Yes | Yes |
+| | Login | `POST /auth/login` | Yes | Yes | Yes | Yes |
+| **Users** | List | `GET /users` | Yes | No | No | No |
+| | Get by ID | `GET /users/:id` | Yes | No | No | No |
+| | Create | `POST /users` | Yes | No | No | No |
+| | Update | `PATCH /users/:id` | Yes | No | No | No |
+| | Delete | `DELETE /users/:id` | Yes | No | No | No |
+| **Farms** | List | `GET /farms` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /farms/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /farms` | Yes | Yes | No | No |
+| | Update | `PATCH /farms/:id` | Yes | Yes | No | No |
+| | Delete | `DELETE /farms/:id` | Yes | No | No | No |
+| **Fields** | List | `GET /fields?farmId=` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /fields/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /fields` | Yes | Yes | No | No |
+| | Update | `PATCH /fields/:id` | Yes | Yes | No | No |
+| | Delete | `DELETE /fields/:id` | Yes | Yes | No | No |
+| **Crops** | List | `GET /crops` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /crops/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /crops` | Yes | Yes | No | No |
+| | Update | `PATCH /crops/:id` | Yes | Yes | No | No |
+| | Delete | `DELETE /crops/:id` | Yes | No | No | No |
+| **Production Cycles** | List | `GET /production-cycle` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /production-cycle/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /production-cycle` | Yes | Yes | No | No |
+| | Update | `PATCH /production-cycle/:id` | Yes | Yes | No | No |
+| | Close | `PATCH /production-cycle/:id/close` | Yes | Yes | No | No |
+| | Delete | `DELETE /production-cycle/:id` | Yes | No | No | No |
+| **Crop Events** | List | `GET /production-cycles/:cycleId/events` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /production-cycles/:cycleId/events/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /production-cycles/:cycleId/events` | Yes | Yes | Yes | No |
+| | Update | `PATCH /production-cycles/:cycleId/events/:id` | Yes | Yes | Yes | No |
+| | Delete | `DELETE /production-cycles/:cycleId/events/:id` | Yes | No | No | No |
+| **Inputs** | List | `GET /production-cycles/:cycleId/inputs` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /production-cycles/:cycleId/inputs/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /production-cycles/:cycleId/inputs` | Yes | Yes | Yes | No |
+| | Update | `PATCH /production-cycles/:cycleId/inputs/:id` | Yes | Yes | Yes | No |
+| | Delete | `DELETE /production-cycles/:cycleId/inputs/:id` | Yes | No | No | No |
+| **Harvests** | List | `GET /harvests` | Yes | Yes | Yes | Yes |
+| | Get by ID | `GET /harvests/:id` | Yes | Yes | Yes | Yes |
+| | Create | `POST /harvests` | Yes | Yes | Yes | No |
+| | Update | `PATCH /harvests/:id` | Yes | Yes | Yes | No |
+| | Delete | `DELETE /harvests/:id` | Yes | No | No | No |
+| **Reports** | Yield History | `GET /reports/yield-history` | Yes | Yes | No | Yes |
+| | Financial | `GET /reports/financial` | Yes | Yes | No | Yes |
+
+### Notes
+
+- **Auth** endpoints (`/auth/login`, `/auth/register`) are public — no JWT or role required.
+- `GET` endpoints without `@Roles` only require a valid JWT (any authenticated role has access).
+- The `RolesGuard` validates the `role` field from the JWT payload against the roles specified by the `@Roles` decorator.
+- The `Permission` entity exists in the database but is not currently used by guards — authorization is purely role-based.
 
 ---
 

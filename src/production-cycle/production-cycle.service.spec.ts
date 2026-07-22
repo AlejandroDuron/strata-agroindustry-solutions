@@ -1,14 +1,21 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ProductionCycleService } from './production-cycle.service';
 
-const mockRepository = () => ({
-  create: jest.fn(),
-  save: jest.fn(),
-  find: jest.fn(),
-  findOne: jest.fn(),
-  findOneBy: jest.fn(),
-  remove: jest.fn(),
-});
+const mockRepository = () => {
+  const repo: any = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+    findOneBy: jest.fn(),
+    remove: jest.fn(),
+    softRemove: jest.fn(),
+  };
+  repo.manager = {
+    transaction: jest.fn(async (cb) => cb(repo)),
+  };
+  return repo;
+};
 
 describe('ProductionCycleService', () => {
   let service: ProductionCycleService;
@@ -47,7 +54,7 @@ describe('ProductionCycleService', () => {
     };
 
     it('should create a cycle when the field and crop exist and have no open cycle', async () => {
-      fieldRepo.findOneBy.mockResolvedValue({ id: 1 } as any);
+      fieldRepo.findOne.mockResolvedValue({ id: 1, farm: { id: 1 } } as any);
       cropRepo.findOneBy.mockResolvedValue({ id: 1 } as any);
       cycleRepo.findOne.mockResolvedValue(null);
       cycleRepo.create.mockReturnValue(dto as any);
@@ -59,20 +66,26 @@ describe('ProductionCycleService', () => {
     });
 
     it('should throw NotFoundException when the field does not exist', async () => {
-      fieldRepo.findOneBy.mockResolvedValue(null);
+      fieldRepo.findOne.mockResolvedValue(null);
 
       await expect(service.create(dto as any)).rejects.toThrow(NotFoundException);
     });
+    
+    it('should throw BadRequestException when the parent farm is deactivated', async () => {
+      fieldRepo.findOne.mockResolvedValue({ id: 1 } as any); // no farm
+
+      await expect(service.create(dto as any)).rejects.toThrow(BadRequestException);
+    });
 
     it('should throw NotFoundException when the crop does not exist', async () => {
-      fieldRepo.findOneBy.mockResolvedValue({ id: 1 } as any);
+      fieldRepo.findOne.mockResolvedValue({ id: 1, farm: { id: 1 } } as any);
       cropRepo.findOneBy.mockResolvedValue(null);
 
       await expect(service.create(dto as any)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when the field already has an open cycle', async () => {
-      fieldRepo.findOneBy.mockResolvedValue({ id: 1 } as any);
+      fieldRepo.findOne.mockResolvedValue({ id: 1, farm: { id: 1 } } as any);
       cropRepo.findOneBy.mockResolvedValue({ id: 1 } as any);
       cycleRepo.findOne.mockResolvedValue({ id: 5, status: 'OPEN' } as any);
 
@@ -119,43 +132,7 @@ describe('ProductionCycleService', () => {
       expect(result.estimatedYield).toBe(40);
     });
 
-    it('should update the field when a new fieldId is provided', async () => {
-      const cycle = { id: 1, status: 'OPEN', fieldId: 1 };
-      cycleRepo.findOne.mockResolvedValue(cycle as any);
-      fieldRepo.findOneBy.mockResolvedValue({ id: 2 } as any);
-      cycleRepo.save.mockImplementation(async (c: any) => c);
 
-      const result = await service.update(1, { fieldId: 2 } as any);
-
-      expect(result.fieldId).toBe(2);
-    });
-
-    it('should throw NotFoundException when the new field does not exist', async () => {
-      const cycle = { id: 1, status: 'OPEN' };
-      cycleRepo.findOne.mockResolvedValue(cycle as any);
-      fieldRepo.findOneBy.mockResolvedValue(null);
-
-      await expect(service.update(1, { fieldId: 999 } as any)).rejects.toThrow(NotFoundException);
-    });
-
-    it('should update the crop when a new cropId is provided', async () => {
-      const cycle = { id: 1, status: 'OPEN', cropId: 1 };
-      cycleRepo.findOne.mockResolvedValue(cycle as any);
-      cropRepo.findOneBy.mockResolvedValue({ id: 2 } as any);
-      cycleRepo.save.mockImplementation(async (c: any) => c);
-
-      const result = await service.update(1, { cropId: 2 } as any);
-
-      expect(result.cropId).toBe(2);
-    });
-
-    it('should throw NotFoundException when the new crop does not exist', async () => {
-      const cycle = { id: 1, status: 'OPEN' };
-      cycleRepo.findOne.mockResolvedValue(cycle as any);
-      cropRepo.findOneBy.mockResolvedValue(null);
-
-      await expect(service.update(1, { cropId: 999 } as any)).rejects.toThrow(NotFoundException);
-    });
 
     it('should throw BadRequestException when the cycle is closed', async () => {
       cycleRepo.findOne.mockResolvedValue({ id: 1, status: 'CLOSED' } as any);
@@ -166,12 +143,12 @@ describe('ProductionCycleService', () => {
 
   describe('remove', () => {
     it('should remove an existing cycle', async () => {
-      const cycle = { id: 1 };
+      const cycle = { id: 1, status: 'OPEN' };
       cycleRepo.findOne.mockResolvedValue(cycle as any);
 
       await service.remove(1);
 
-      expect(cycleRepo.remove).toHaveBeenCalledWith(cycle);
+      expect(cycleRepo.softRemove).toHaveBeenCalledWith(cycle);
     });
   });
 

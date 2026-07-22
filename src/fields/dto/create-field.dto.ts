@@ -1,10 +1,11 @@
-import { IsNotEmpty, IsString, IsNumber, IsPositive, IsInt, MaxLength, Max } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsPositive, IsInt, MaxLength, Max, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFieldDto {
   @ApiProperty({ example: 1 })
   @IsNotEmpty({ message: 'Farm id is required' })
   @IsInt({ message: 'Farm id must be an integer' })
+  @Min(1, { message: 'Farm id must be greater than 0' })
   farmId: number;
 
   @ApiProperty({ example: 'Lote 1' })
@@ -16,7 +17,7 @@ export class CreateFieldDto {
   @ApiProperty({ example: 5.5 })
   @IsNotEmpty({ message: 'Field area is required' })
   @IsNumber({}, { message: 'Area must be a number' })
-  @IsPositive({ message: 'Area must be greater than 0' })
+  @Min(0.1, { message: 'Area must be at least 0.1 manzanas' })
   @Max(1000, { message: 'Area cannot exceed 1000 manzanas' })
   area: number;
 }
