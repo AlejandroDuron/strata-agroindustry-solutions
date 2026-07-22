@@ -9,7 +9,7 @@ Backend for agricultural farms, cooperatives, and agro-exporters that need to di
 | Framework | NestJS 11 |
 | Language | TypeScript 5 |
 | ORM | TypeORM |
-| Database | SQLite (dev) / PostgreSQL (prod) |
+| Database | PostgreSQL |
 | Authentication | Passport + JWT |
 | Validation | class-validator + class-transformer |
 | Documentation | Swagger / OpenAPI |
