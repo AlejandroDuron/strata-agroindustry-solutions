@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Role } from '../../auth/entities/role.entity';
 
 @Entity()
@@ -20,6 +20,9 @@ export class User {
 
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   role: Role;
+
+  @DeleteDateColumn()
+  deletedAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

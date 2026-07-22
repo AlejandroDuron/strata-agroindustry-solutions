@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -76,10 +77,10 @@ export class FarmsController {
 
   @Delete(':id')
   @Roles('admin')
-  @ApiOperation({ summary: 'Deactivate farm (soft delete)' })
-  @ApiResponse({ status: 200, description: 'Farm deactivated' })
+  @ApiOperation({ summary: 'Delete a farm (soft delete by default, hard delete with ?hard=true)' })
+  @ApiResponse({ status: 200, description: 'Farm deleted' })
   @ApiResponse({ status: 404, description: 'Farm not found' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.farmsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {
+    return this.farmsService.remove(id, hard === 'true');
   }
 }

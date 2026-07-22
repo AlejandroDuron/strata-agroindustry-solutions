@@ -50,9 +50,13 @@ export class FarmsService {
     return this.farmRepository.save(farm);
   }
 
-  async remove(id: number): Promise<Farm> {
+  async remove(id: number, hard = false): Promise<Farm> {
     const farm = await this.findNonDeletedOrThrow(id);
-    await this.farmRepository.softRemove(farm);
+    if (hard) {
+      await this.farmRepository.remove(farm);
+    } else {
+      await this.farmRepository.softRemove(farm);
+    }
     return farm;
   }
 

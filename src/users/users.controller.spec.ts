@@ -66,6 +66,6 @@ describe('UsersController', () => {
 
     await controller.remove('1');
 
-    expect(service.remove).toHaveBeenCalledWith('1');
+    expect(service.remove).toHaveBeenCalledWith('1', false);
   });
 });

@@ -15,6 +15,7 @@ describe('UsersService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       remove: jest.fn(),
+      softRemove: jest.fn(),
     };
     roleRepository = {
       findOne: jest.fn(),
@@ -151,7 +152,7 @@ describe('UsersService', () => {
 
       await service.remove('1');
 
-      expect(userRepository.remove).toHaveBeenCalledWith(user);
+      expect(userRepository.softRemove).toHaveBeenCalledWith(user);
     });
 
     it('should throw NotFoundException when user does not exist', async () => {

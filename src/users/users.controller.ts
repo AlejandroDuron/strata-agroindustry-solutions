@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -69,10 +70,10 @@ export class UsersController {
 
   @Delete(':id')
   @Roles('admin')
-  @ApiOperation({ summary: 'Delete a user' })
+  @ApiOperation({ summary: 'Delete a user (soft delete by default, hard delete with ?hard=true)' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  remove(@Param('id') id: string, @Query('hard') hard?: string) {
+    return this.usersService.remove(id, hard === 'true');
   }
 }

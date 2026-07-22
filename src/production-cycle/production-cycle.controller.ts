@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -87,8 +88,8 @@ export class ProductionCycleController {
 
   @Delete(':id')
   @Roles('admin')
-  @ApiOperation({ summary: 'Delete a production cycle' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.productionCycleService.remove(id);
+  @ApiOperation({ summary: 'Delete a production cycle (soft delete by default, hard delete with ?hard=true)' })
+  remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {
+    return this.productionCycleService.remove(id, hard === 'true');
   }
 }

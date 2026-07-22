@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -72,10 +73,10 @@ export class CropsController {
 
   @Delete(':id')
   @Roles('admin')
-  @ApiOperation({ summary: 'Delete a crop' })
+  @ApiOperation({ summary: 'Delete a crop (soft delete by default, hard delete with ?hard=true)' })
   @ApiResponse({ status: 200, description: 'Crop deleted successfully' })
   @ApiResponse({ status: 404, description: 'Crop not found' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.cropsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @Query('hard') hard?: string) {
+    return this.cropsService.remove(id, hard === 'true');
   }
 }

@@ -91,7 +91,9 @@ All endpoints are documented there with their request/response schemas.
 
 ### Postman
 
-1. Import `postman_collection.json` into Postman
+All API endpoints can be found in the Postman collection at [`docs/postman_collection.json`](docs/postman_collection.json).
+
+1. Import `docs/postman_collection.json` into Postman
 2. Run the **Login** request first — it auto-saves the JWT to the `{{jwt_token}}` variable
 3. All other requests use that token via the `Authorization: Bearer {{jwt_token}}` header
 
@@ -228,4 +230,4 @@ ROLE (N) ──── (N) PERMISSION
 
 ---
 
-Detailed database documentation available at [`docs/base-de-datos.md`](docs/base-de-datos.md).
+Detailed database documentation available at [`docs/database.md`](docs/database.md).

@@ -7,6 +7,7 @@ const mockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
   remove: jest.fn(),
+  softRemove: jest.fn(),
 });
 
 describe('CropsService', () => {
@@ -121,7 +122,7 @@ describe('CropsService', () => {
 
       await service.remove(1);
 
-      expect(cropRepository.remove).toHaveBeenCalledWith(crop);
+      expect(cropRepository.softRemove).toHaveBeenCalledWith(crop);
     });
 
     it('should throw NotFoundException when the crop to remove does not exist', async () => {

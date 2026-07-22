@@ -87,11 +87,15 @@ export class UsersService {
     return result;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, hard = false): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: Number(id) } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    await this.userRepository.remove(user);
+    if (hard) {
+      await this.userRepository.remove(user);
+    } else {
+      await this.userRepository.softRemove(user);
+    }
   }
 }

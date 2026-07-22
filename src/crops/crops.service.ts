@@ -66,8 +66,12 @@ export class CropsService {
     return this.cropRepository.save(crop);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, hard = false): Promise<void> {
     const crop = await this.findOne(id);
-    await this.cropRepository.remove(crop);
+    if (hard) {
+      await this.cropRepository.remove(crop);
+    } else {
+      await this.cropRepository.softRemove(crop);
+    }
   }
 }

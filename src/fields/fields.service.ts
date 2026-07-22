@@ -62,9 +62,13 @@ export class FieldsService {
     return this.fieldRepository.save(field);
   }
 
-  async remove(id: number): Promise<Field> {
+  async remove(id: number, hard = false): Promise<Field> {
     const field = await this.findNonDeletedOrThrow(id);
-    await this.fieldRepository.softRemove(field);
+    if (hard) {
+      await this.fieldRepository.remove(field);
+    } else {
+      await this.fieldRepository.softRemove(field);
+    }
     return field;
   }
 

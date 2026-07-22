@@ -113,12 +113,16 @@ export class ProductionCycleService {
     return this.cycleRepo.save(cycle);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, hard = false): Promise<void> {
     const cycle = await this.findOne(id);
     if (cycle.status === 'CLOSED') {
       throw new BadRequestException('Cannot delete a closed production cycle');
     }
-    await this.cycleRepo.softRemove(cycle);
+    if (hard) {
+      await this.cycleRepo.remove(cycle);
+    } else {
+      await this.cycleRepo.softRemove(cycle);
+    }
   }
 
   /**
