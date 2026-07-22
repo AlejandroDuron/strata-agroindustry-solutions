@@ -1,43 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AuthController } from '../src/auth/auth.controller';
-import { AuthService } from '../src/auth/auth.service';
-import { UsersService } from '../src/users/users.service';
-import { User } from '../src/users/entities/user.entity';
-import { Role } from '../src/auth/entities/role.entity';
-import { jwtConstants } from '../src/auth/constants';
-import { createFakeRepository } from './utils/fake-repository';
+import { createTestApp, cleanDatabase, seedRoles } from './utils/test-app';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule.register({ secret: jwtConstants.secret, signOptions: { expiresIn: '1h' } })],
-      controllers: [AuthController],
-      providers: [
-        AuthService,
-        UsersService,
-        { provide: getRepositoryToken(User), useValue: createFakeRepository<User>() },
-        { provide: getRepositoryToken(Role), useValue: createFakeRepository<Role>() },
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
-    await app.init();
+  beforeAll(async () => {
+    app = await createTestApp();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await cleanDatabase(app);
+    await seedRoles(app);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 
@@ -45,7 +22,6 @@ describe('AuthController (e2e)', () => {
     const registerDto = {
       email: 'postman@example.com',
       password: 'securePassword',
-      role: 'user',
     };
 
     await request(app.getHttpServer())
@@ -53,9 +29,7 @@ describe('AuthController (e2e)', () => {
       .send(registerDto)
       .expect(201)
       .expect((response) => {
-        expect(response.body).toMatchObject({
-          email: registerDto.email,
-        });
+        expect(response.body.email).toBe(registerDto.email);
         expect(response.body.passwordHash).toBeUndefined();
       });
 

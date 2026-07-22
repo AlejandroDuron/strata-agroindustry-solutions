@@ -58,5 +58,25 @@ export function createFakeRepository<T extends Row>(seed: T[] = [], populate?: (
       if (idx >= 0) rows[idx] = { ...rows[idx], ...partial };
     }),
     rows: () => rows,
+    manager: {
+      transaction: jest.fn(async (cb: any) => {
+        // Simulate a transactional EntityManager that delegates to our fake repo
+        const fakeManager = {
+          findOne: async (_entity: any, opts?: any) => withRelations(applyWhere(rows, opts)[0] ?? null),
+          save: async (entity: any) => {
+            if (entity.id == null) {
+              entity = { ...entity, id: nextId++ };
+              rows.push(entity);
+            } else {
+              const idx = rows.findIndex((r) => r.id === entity.id);
+              if (idx >= 0) rows[idx] = { ...rows[idx], ...entity };
+              else rows.push(entity);
+            }
+            return entity;
+          },
+        };
+        return cb(fakeManager);
+      }),
+    },
   };
 }

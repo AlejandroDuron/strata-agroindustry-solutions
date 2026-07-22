@@ -179,13 +179,17 @@ describe('ProductionCycleService', () => {
     });
 
     it('should throw BadRequestException when there are no harvests', async () => {
-      cycleRepo.findOne.mockResolvedValue({ ...baseCycle, harvests: [] } as any);
+      cycleRepo.findOne
+        .mockResolvedValueOnce({ ...baseCycle } as any)       // lock query
+        .mockResolvedValueOnce({ ...baseCycle, harvests: [] } as any); // relations query
 
       await expect(service.close(1)).rejects.toThrow(BadRequestException);
     });
 
     it('should close a cycle and compute financials without historical data', async () => {
-      cycleRepo.findOne.mockResolvedValue({ ...baseCycle } as any);
+      cycleRepo.findOne
+        .mockResolvedValueOnce({ ...baseCycle } as any)  // lock query
+        .mockResolvedValueOnce({ ...baseCycle } as any); // relations query
       cycleRepo.find.mockResolvedValue([]); // no closed historical cycles
       cycleRepo.save.mockImplementation(async (c: any) => c);
 
@@ -200,7 +204,10 @@ describe('ProductionCycleService', () => {
     });
 
     it('should raise a yield alert when the drop exceeds 20% of the historical average', async () => {
-      cycleRepo.findOne.mockResolvedValueOnce({ ...baseCycle, harvests: [{ quantityObtained: 5, quantitySold: 5, unitSalePrice: 100 }] } as any);
+      const lowYieldCycle = { ...baseCycle, harvests: [{ quantityObtained: 5, quantitySold: 5, unitSalePrice: 100 }] };
+      cycleRepo.findOne
+        .mockResolvedValueOnce(lowYieldCycle as any)  // lock query
+        .mockResolvedValueOnce(lowYieldCycle as any); // relations query
       cycleRepo.find.mockResolvedValue([
         { id: 2, harvests: [{ quantityObtained: 50 }] },
       ] as any);
@@ -214,7 +221,9 @@ describe('ProductionCycleService', () => {
     });
 
     it('should exclude the current cycle from the historical average', async () => {
-      cycleRepo.findOne.mockResolvedValueOnce({ ...baseCycle } as any);
+      cycleRepo.findOne
+        .mockResolvedValueOnce({ ...baseCycle } as any)  // lock query
+        .mockResolvedValueOnce({ ...baseCycle } as any); // relations query
       cycleRepo.find.mockResolvedValue([
         { id: 1, harvests: [{ quantityObtained: 999 }] }, // same cycle, must be excluded
         { id: 2, harvests: [{ quantityObtained: 40 }] },

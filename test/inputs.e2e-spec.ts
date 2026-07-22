@@ -1,58 +1,78 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { InputsController } from '../src/inputs/inputs.controller';
-import { InputsService } from '../src/inputs/inputs.service';
-import { Input, InputType } from '../src/inputs/entities/input.entity';
-import { ProductionCycle } from '../src/production-cycle/entities/production-cycle.entity';
-import { JwtStrategy } from '../src/auth/jwt.strategy';
-import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../src/auth/guards/roles.guard';
-import { jwtConstants } from '../src/auth/constants';
-import { createFakeRepository } from './utils/fake-repository';
+import { createTestApp, cleanDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('InputsController (e2e)', () => {
   let app: INestApplication;
-  let cycleRepo: ReturnType<typeof createFakeRepository<ProductionCycle>>;
 
-  beforeEach(async () => {
-    cycleRepo = createFakeRepository<ProductionCycle>([
-      { id: 1, status: 'OPEN', field: { area: 5 } } as any,
-      { id: 2, status: 'CLOSED', field: { area: 5 } } as any,
-    ]);
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        PassportModule,
-        JwtModule.register({ secret: jwtConstants.secret, signOptions: { expiresIn: '1h' } }),
-      ],
-      controllers: [InputsController],
-      providers: [
-        InputsService,
-        JwtStrategy,
-        JwtAuthGuard,
-        RolesGuard,
-        { provide: getRepositoryToken(Input), useValue: createFakeRepository<Input>() },
-        { provide: getRepositoryToken(ProductionCycle), useValue: cycleRepo },
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-    await app.init();
+  beforeAll(async () => {
+    app = await createTestApp();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await cleanDatabase(app);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 
+  /** Creates farm → field → crop → open cycle, returns cycleId */
+  async function seedOpenCycle(): Promise<number> {
+    const farmRes = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', authHeader('admin'))
+      .send({ name: 'Finca Test', location: 'Santa Ana' })
+      .expect(201);
+
+    const fieldRes = await request(app.getHttpServer())
+      .post('/fields')
+      .set('Authorization', authHeader('admin'))
+      .send({ farmId: farmRes.body.id, name: 'Lote 1', area: 5 })
+      .expect(201);
+
+    const cropRes = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', authHeader('admin'))
+      .send({ type: 'Coffee', variety: 'Arabica' })
+      .expect(201);
+
+    const cycleRes = await request(app.getHttpServer())
+      .post('/production-cycle')
+      .set('Authorization', authHeader('admin'))
+      .send({
+        fieldId: fieldRes.body.id,
+        cropId: cropRes.body.id,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
+      .expect(201);
+
+    return cycleRes.body.id;
+  }
+
+  async function seedClosedCycle(): Promise<number> {
+    const cycleId = await seedOpenCycle();
+
+    await request(app.getHttpServer())
+      .post('/harvests')
+      .set('Authorization', authHeader('admin'))
+      .send({ cycleId, quantityObtained: 10, quality: 'B', unitSalePrice: 50, quantitySold: 8 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/production-cycle/${cycleId}/close`)
+      .set('Authorization', authHeader('admin'))
+      .expect(200);
+
+    return cycleId;
+  }
+
   const validDto = {
     name: 'Urea 46%',
-    type: InputType.FERTILIZER,
+    type: 'FERTILIZER',
     quantity: 10,
     unitCost: 15,
     unit: 'kg',
@@ -60,47 +80,62 @@ describe('InputsController (e2e)', () => {
   };
 
   it('should reject creation from an auditor (403)', async () => {
+    const cycleId = await seedOpenCycle();
+
     await request(app.getHttpServer())
-      .post('/production-cycles/1/inputs')
+      .post(`/production-cycles/${cycleId}/inputs`)
       .set('Authorization', authHeader('auditor'))
       .send(validDto)
       .expect(403);
   });
 
   it('should allow an operador to register an input and recalculate the cycle cost', async () => {
+    const cycleId = await seedOpenCycle();
+
     const response = await request(app.getHttpServer())
-      .post('/production-cycles/1/inputs')
+      .post(`/production-cycles/${cycleId}/inputs`)
       .set('Authorization', authHeader('operador'))
       .send(validDto)
       .expect(201);
 
     expect(response.body.name).toBe('Urea 46%');
-    expect(cycleRepo.update).toHaveBeenCalledWith(1, { currentCostPerArea: (10 * 15) / 5 });
+
+    // Verify cost per area was recalculated: (10 * 15) / 5 = 30
+    const cycleResponse = await request(app.getHttpServer())
+      .get(`/production-cycle/${cycleId}`)
+      .set('Authorization', authHeader('admin'))
+      .expect(200);
+
+    expect(cycleResponse.body.currentCostPerArea).toBe(30);
   });
 
   it('should reject an input on a closed cycle with 400', async () => {
+    const cycleId = await seedClosedCycle();
+
     await request(app.getHttpServer())
-      .post('/production-cycles/2/inputs')
+      .post(`/production-cycles/${cycleId}/inputs`)
       .set('Authorization', authHeader('admin'))
       .send(validDto)
       .expect(400);
   });
 
   it('should allow an operador to update an input but not delete it', async () => {
+    const cycleId = await seedOpenCycle();
+
     const created = await request(app.getHttpServer())
-      .post('/production-cycles/1/inputs')
+      .post(`/production-cycles/${cycleId}/inputs`)
       .set('Authorization', authHeader('admin'))
       .send(validDto)
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/production-cycles/1/inputs/${created.body.id}`)
+      .patch(`/production-cycles/${cycleId}/inputs/${created.body.id}`)
       .set('Authorization', authHeader('operador'))
       .send({ quantity: 20 })
       .expect(200);
 
     await request(app.getHttpServer())
-      .delete(`/production-cycles/1/inputs/${created.body.id}`)
+      .delete(`/production-cycles/${cycleId}/inputs/${created.body.id}`)
       .set('Authorization', authHeader('operador'))
       .expect(403);
   });

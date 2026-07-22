@@ -1,93 +1,98 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { ProductionCycleController } from '../src/production-cycle/production-cycle.controller';
-import { ProductionCycleService } from '../src/production-cycle/production-cycle.service';
-import { ProductionCycle } from '../src/production-cycle/entities/production-cycle.entity';
-import { Harvest } from '../src/harvests/entities/harvest.entity';
-import { Input } from '../src/inputs/entities/input.entity';
-import { Field } from '../src/fields/entities/field.entity';
-import { Crop } from '../src/crops/entities/crop.entity';
-import { JwtStrategy } from '../src/auth/jwt.strategy';
-import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../src/auth/guards/roles.guard';
-import { jwtConstants } from '../src/auth/constants';
-import { createFakeRepository } from './utils/fake-repository';
+import { createTestApp, cleanDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('ProductionCycleController (e2e)', () => {
   let app: INestApplication;
-  let cycleRepo: ReturnType<typeof createFakeRepository<ProductionCycle>>;
 
-  beforeEach(async () => {
-    cycleRepo = createFakeRepository<ProductionCycle>();
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        PassportModule,
-        JwtModule.register({ secret: jwtConstants.secret, signOptions: { expiresIn: '1h' } }),
-      ],
-      controllers: [ProductionCycleController],
-      providers: [
-        ProductionCycleService,
-        JwtStrategy,
-        JwtAuthGuard,
-        RolesGuard,
-        { provide: getRepositoryToken(ProductionCycle), useValue: cycleRepo },
-        { provide: getRepositoryToken(Harvest), useValue: createFakeRepository<Harvest>() },
-        { provide: getRepositoryToken(Input), useValue: createFakeRepository<Input>() },
-        { provide: getRepositoryToken(Field), useValue: createFakeRepository<Field>([{ id: 1 } as any]) },
-        { provide: getRepositoryToken(Crop), useValue: createFakeRepository<Crop>([{ id: 1 } as any]) },
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-    await app.init();
+  beforeAll(async () => {
+    app = await createTestApp();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await cleanDatabase(app);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 
-  const validDto = {
-    fieldId: 1,
-    cropId: 1,
-    sowingDate: '2026-01-15',
-    expectedHarvestDate: '2026-06-15',
-    estimatedYield: 30,
-  };
+  /** Helper: create a farm + field + crop, returns their IDs */
+  async function seedFieldAndCrop() {
+    const farmRes = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', authHeader('admin'))
+      .send({ name: 'Finca Test', location: 'Santa Ana' })
+      .expect(201);
+
+    const fieldRes = await request(app.getHttpServer())
+      .post('/fields')
+      .set('Authorization', authHeader('admin'))
+      .send({ farmId: farmRes.body.id, name: 'Lote 1', area: 5 })
+      .expect(201);
+
+    const cropRes = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', authHeader('admin'))
+      .send({ type: 'Coffee', variety: 'Arabica' })
+      .expect(201);
+
+    return { fieldId: fieldRes.body.id, cropId: cropRes.body.id };
+  }
 
   it('should reject creation from an operador (403)', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+
     await request(app.getHttpServer())
       .post('/production-cycle')
       .set('Authorization', authHeader('operador'))
-      .send(validDto)
+      .send({
+        fieldId,
+        cropId,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
       .expect(403);
   });
 
   it('should create a cycle and reject a second open cycle for the same field', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+    const dto = {
+      fieldId,
+      cropId,
+      sowingDate: '2026-01-15',
+      expectedHarvestDate: '2026-06-15',
+      estimatedYield: 30,
+    };
+
     await request(app.getHttpServer())
       .post('/production-cycle')
       .set('Authorization', authHeader('gerente'))
-      .send(validDto)
+      .send(dto)
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/production-cycle')
       .set('Authorization', authHeader('gerente'))
-      .send(validDto)
+      .send(dto)
       .expect(400);
   });
 
   it('should reject closing a cycle without harvests', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+
     const created = await request(app.getHttpServer())
       .post('/production-cycle')
       .set('Authorization', authHeader('admin'))
-      .send(validDto)
+      .send({
+        fieldId,
+        cropId,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
       .expect(201);
 
     await request(app.getHttpServer())
@@ -97,18 +102,48 @@ describe('ProductionCycleController (e2e)', () => {
   });
 
   it('should close a cycle and compute the financial summary', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+
     const created = await request(app.getHttpServer())
       .post('/production-cycle')
       .set('Authorization', authHeader('admin'))
-      .send(validDto)
+      .send({
+        fieldId,
+        cropId,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
       .expect(201);
 
-    const row = cycleRepo.rows().find((r) => r.id === created.body.id)!;
-    row.field = { id: 1, name: 'Lote 1' };
-    row.crop = { id: 1 };
-    row.harvests = [{ quantityObtained: 20, quantitySold: 18, unitSalePrice: 100 }];
-    row.inputs = [{ quantity: 5, unitCost: 20 }];
+    // Add a harvest
+    await request(app.getHttpServer())
+      .post('/harvests')
+      .set('Authorization', authHeader('operador'))
+      .send({
+        cycleId: created.body.id,
+        quantityObtained: 20,
+        quality: 'A',
+        unitSalePrice: 100,
+        quantitySold: 18,
+      })
+      .expect(201);
 
+    // Add an input
+    await request(app.getHttpServer())
+      .post(`/production-cycles/${created.body.id}/inputs`)
+      .set('Authorization', authHeader('operador'))
+      .send({
+        name: 'Urea',
+        type: 'FERTILIZER',
+        quantity: 5,
+        unitCost: 20,
+        unit: 'kg',
+        applicationDate: '2026-02-01',
+      })
+      .expect(201);
+
+    // Close the cycle
     const closeResponse = await request(app.getHttpServer())
       .patch(`/production-cycle/${created.body.id}/close`)
       .set('Authorization', authHeader('gerente'))
@@ -121,10 +156,18 @@ describe('ProductionCycleController (e2e)', () => {
   });
 
   it('should reject deletion from a gerente and allow it from admin', async () => {
+    const { fieldId, cropId } = await seedFieldAndCrop();
+
     const created = await request(app.getHttpServer())
       .post('/production-cycle')
       .set('Authorization', authHeader('admin'))
-      .send(validDto)
+      .send({
+        fieldId,
+        cropId,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
       .expect(201);
 
     await request(app.getHttpServer())

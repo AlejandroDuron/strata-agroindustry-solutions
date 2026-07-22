@@ -142,18 +142,28 @@ export class ProductionCycleService {
     historicalAvgYield: number | null;
   }> {
     return this.cycleRepo.manager.transaction(async (manager) => {
+      // First, lock the row without relations
+      const lockedCycle = await manager.findOne(ProductionCycle, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!lockedCycle) {
+        throw new NotFoundException(`Production cycle with id ${id} not found`);
+      }
+
+      if (lockedCycle.status === 'CLOSED') {
+        throw new BadRequestException('The cycle is already closed');
+      }
+
+      // Then load relations separately (no lock needed)
       const cycle = await manager.findOne(ProductionCycle, {
         where: { id },
         relations: { field: true, crop: true, harvests: true, inputs: true },
-        lock: { mode: 'pessimistic_write' },
       });
 
       if (!cycle) {
         throw new NotFoundException(`Production cycle with id ${id} not found`);
-      }
-
-      if (cycle.status === 'CLOSED') {
-        throw new BadRequestException('The cycle is already closed');
       }
 
       // 1. Validate at least one harvest exists

@@ -1,64 +1,90 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { ReportsController } from '../src/reports/reports.controller';
-import { ReportsService } from '../src/reports/reports.service';
-import { ProductionCycle } from '../src/production-cycle/entities/production-cycle.entity';
-import { JwtStrategy } from '../src/auth/jwt.strategy';
-import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../src/auth/guards/roles.guard';
-import { jwtConstants } from '../src/auth/constants';
-import { createFakeRepository } from './utils/fake-repository';
+import { createTestApp, cleanDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('ReportsController (e2e)', () => {
   let app: INestApplication;
 
+  beforeAll(async () => {
+    app = await createTestApp();
+  });
+
   beforeEach(async () => {
-    const cycleRepo = createFakeRepository<ProductionCycle>([
-      {
-        id: 1,
-        fieldId: 1,
-        status: 'CLOSED',
-        field: { id: 1, name: 'Lote 1', area: 5 },
-        crop: { variety: 'Arabica' },
+    await cleanDatabase(app);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  /** Creates a full closed cycle with harvest/inputs for reporting */
+  async function seedClosedCycle() {
+    const farmRes = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', authHeader('admin'))
+      .send({ name: 'Finca Test', location: 'Santa Ana' })
+      .expect(201);
+
+    const fieldRes = await request(app.getHttpServer())
+      .post('/fields')
+      .set('Authorization', authHeader('admin'))
+      .send({ farmId: farmRes.body.id, name: 'Lote 1', area: 5 })
+      .expect(201);
+
+    const cropRes = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', authHeader('admin'))
+      .send({ type: 'Coffee', variety: 'Arabica' })
+      .expect(201);
+
+    const cycleRes = await request(app.getHttpServer())
+      .post('/production-cycle')
+      .set('Authorization', authHeader('admin'))
+      .send({
+        fieldId: fieldRes.body.id,
+        cropId: cropRes.body.id,
         sowingDate: '2025-01-01',
         expectedHarvestDate: '2025-06-01',
         estimatedYield: 25,
-        realYieldAtClose: 26,
-        totalRevenueAtClose: 1000,
-        totalCostAtClose: 400,
-        grossMarginAtClose: 600,
-        harvests: [],
-      } as any,
-    ]);
+      })
+      .expect(201);
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        PassportModule,
-        JwtModule.register({ secret: jwtConstants.secret, signOptions: { expiresIn: '1h' } }),
-      ],
-      controllers: [ReportsController],
-      providers: [
-        ReportsService,
-        JwtStrategy,
-        JwtAuthGuard,
-        RolesGuard,
-        { provide: getRepositoryToken(ProductionCycle), useValue: cycleRepo },
-      ],
-    }).compile();
+    // Add harvest
+    await request(app.getHttpServer())
+      .post('/harvests')
+      .set('Authorization', authHeader('admin'))
+      .send({
+        cycleId: cycleRes.body.id,
+        quantityObtained: 26,
+        quality: 'A',
+        unitSalePrice: 50,
+        quantitySold: 20,
+      })
+      .expect(201);
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-    await app.init();
-  });
+    // Add input
+    await request(app.getHttpServer())
+      .post(`/production-cycles/${cycleRes.body.id}/inputs`)
+      .set('Authorization', authHeader('admin'))
+      .send({
+        name: 'Urea',
+        type: 'FERTILIZER',
+        quantity: 10,
+        unitCost: 40,
+        unit: 'kg',
+        applicationDate: '2025-02-01',
+      })
+      .expect(201);
 
-  afterEach(async () => {
-    await app.close();
-  });
+    // Close cycle
+    await request(app.getHttpServer())
+      .patch(`/production-cycle/${cycleRes.body.id}/close`)
+      .set('Authorization', authHeader('admin'))
+      .expect(200);
+
+    return { fieldId: fieldRes.body.id, cycleId: cycleRes.body.id };
+  }
 
   it('should reject requests from an operador (403)', async () => {
     await request(app.getHttpServer())
@@ -82,22 +108,26 @@ describe('ReportsController (e2e)', () => {
   });
 
   it('should return the yield history for an existing field', async () => {
+    const { fieldId } = await seedClosedCycle();
+
     const response = await request(app.getHttpServer())
-      .get('/reports/yield-history?fieldId=1')
+      .get(`/reports/yield-history?fieldId=${fieldId}`)
       .set('Authorization', authHeader('auditor'))
       .expect(200);
 
-    expect(response.body.fieldId).toBe(1);
+    expect(response.body.fieldId).toBe(fieldId);
     expect(response.body.history).toHaveLength(1);
   });
 
   it('should return the financial summary', async () => {
+    await seedClosedCycle();
+
     const response = await request(app.getHttpServer())
       .get('/reports/financial')
       .set('Authorization', authHeader('gerente'))
       .expect(200);
 
     expect(response.body.totalClosedCycles).toBe(1);
-    expect(response.body.totalRevenue).toBe(1000);
+    expect(response.body.totalRevenue).toBe(20 * 50); // quantitySold * unitSalePrice
   });
 });

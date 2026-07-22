@@ -1,93 +1,118 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { HarvestsController } from '../src/harvests/harvests.controller';
-import { HarvestsService } from '../src/harvests/harvests.service';
-import { Harvest } from '../src/harvests/entities/harvest.entity';
-import { ProductionCycle } from '../src/production-cycle/entities/production-cycle.entity';
-import { JwtStrategy } from '../src/auth/jwt.strategy';
-import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../src/auth/guards/roles.guard';
-import { jwtConstants } from '../src/auth/constants';
-import { createFakeRepository } from './utils/fake-repository';
+import { createTestApp, cleanDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('HarvestsController (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
-    const cycleRepo = createFakeRepository<ProductionCycle>([
-      { id: 1, status: 'OPEN' } as any,
-      { id: 2, status: 'CLOSED' } as any,
-    ]);
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        PassportModule,
-        JwtModule.register({ secret: jwtConstants.secret, signOptions: { expiresIn: '1h' } }),
-      ],
-      controllers: [HarvestsController],
-      providers: [
-        HarvestsService,
-        JwtStrategy,
-        JwtAuthGuard,
-        RolesGuard,
-        {
-          provide: getRepositoryToken(Harvest),
-          useValue: createFakeRepository<Harvest>([], (row) => ({
-            ...row,
-            productionCycle: cycleRepo.rows().find((c) => c.id === row.productionCycleId),
-          })),
-        },
-        { provide: getRepositoryToken(ProductionCycle), useValue: cycleRepo },
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-    await app.init();
+  beforeAll(async () => {
+    app = await createTestApp();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await cleanDatabase(app);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 
-  const validDto = { cycleId: 1, quantityObtained: 25.5, quality: 'A', unitSalePrice: 120, quantitySold: 22 };
+  /** Creates farm → field → crop → open cycle, returns cycleId */
+  async function seedOpenCycle(): Promise<number> {
+    const farmRes = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', authHeader('admin'))
+      .send({ name: 'Finca Test', location: 'Santa Ana' })
+      .expect(201);
+
+    const fieldRes = await request(app.getHttpServer())
+      .post('/fields')
+      .set('Authorization', authHeader('admin'))
+      .send({ farmId: farmRes.body.id, name: 'Lote 1', area: 5 })
+      .expect(201);
+
+    const cropRes = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', authHeader('admin'))
+      .send({ type: 'Coffee', variety: 'Arabica' })
+      .expect(201);
+
+    const cycleRes = await request(app.getHttpServer())
+      .post('/production-cycle')
+      .set('Authorization', authHeader('admin'))
+      .send({
+        fieldId: fieldRes.body.id,
+        cropId: cropRes.body.id,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
+      .expect(201);
+
+    return cycleRes.body.id;
+  }
+
+  /** Creates an open cycle and closes it, returns the closed cycle ID */
+  async function seedClosedCycle(): Promise<number> {
+    const cycleId = await seedOpenCycle();
+
+    // Add a harvest so we can close
+    await request(app.getHttpServer())
+      .post('/harvests')
+      .set('Authorization', authHeader('admin'))
+      .send({ cycleId, quantityObtained: 10, quality: 'B', unitSalePrice: 50, quantitySold: 8 })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/production-cycle/${cycleId}/close`)
+      .set('Authorization', authHeader('admin'))
+      .expect(200);
+
+    return cycleId;
+  }
+
+  const validDto = { quantityObtained: 25.5, quality: 'A', unitSalePrice: 120, quantitySold: 22 };
 
   it('should reject creation from an auditor (403)', async () => {
+    const cycleId = await seedOpenCycle();
+
     await request(app.getHttpServer())
       .post('/harvests')
       .set('Authorization', authHeader('auditor'))
-      .send(validDto)
+      .send({ ...validDto, cycleId })
       .expect(403);
   });
 
   it('should allow an operador to register a harvest on an open cycle', async () => {
+    const cycleId = await seedOpenCycle();
+
     const response = await request(app.getHttpServer())
       .post('/harvests')
       .set('Authorization', authHeader('operador'))
-      .send(validDto)
+      .send({ ...validDto, cycleId })
       .expect(201);
 
     expect(response.body.quantityObtained).toBe(25.5);
   });
 
   it('should reject a harvest on a closed cycle with 400', async () => {
+    const cycleId = await seedClosedCycle();
+
     await request(app.getHttpServer())
       .post('/harvests')
       .set('Authorization', authHeader('admin'))
-      .send({ ...validDto, cycleId: 2 })
+      .send({ ...validDto, cycleId })
       .expect(400);
   });
 
   it('should allow an operador to update a harvest', async () => {
+    const cycleId = await seedOpenCycle();
+
     const created = await request(app.getHttpServer())
       .post('/harvests')
       .set('Authorization', authHeader('admin'))
-      .send(validDto)
+      .send({ ...validDto, cycleId })
       .expect(201);
 
     await request(app.getHttpServer())
@@ -98,10 +123,12 @@ describe('HarvestsController (e2e)', () => {
   });
 
   it('should reject deletion from an operador and allow it from admin', async () => {
+    const cycleId = await seedOpenCycle();
+
     const created = await request(app.getHttpServer())
       .post('/harvests')
       .set('Authorization', authHeader('admin'))
-      .send(validDto)
+      .send({ ...validDto, cycleId })
       .expect(201);
 
     await request(app.getHttpServer())

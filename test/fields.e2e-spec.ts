@@ -1,72 +1,47 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { FieldsController } from '../src/fields/fields.controller';
-import { FieldsService } from '../src/fields/fields.service';
-import { FarmsService } from '../src/farms/farms.service';
-import { Field } from '../src/fields/entities/field.entity';
-import { Farm } from '../src/farms/entities/farm.entity';
-import { ProductionCycle } from '../src/production-cycle/entities/production-cycle.entity';
-import { JwtStrategy } from '../src/auth/jwt.strategy';
-import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../src/auth/guards/roles.guard';
-import { jwtConstants } from '../src/auth/constants';
-import { createFakeRepository } from './utils/fake-repository';
+import { createTestApp, cleanDatabase } from './utils/test-app';
 import { authHeader } from './utils/build-token';
 
 describe('FieldsController (e2e)', () => {
   let app: INestApplication;
-  let cycleRepo: ReturnType<typeof createFakeRepository<ProductionCycle>>;
 
-  beforeEach(async () => {
-    cycleRepo = createFakeRepository<ProductionCycle>();
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        PassportModule,
-        JwtModule.register({ secret: jwtConstants.secret, signOptions: { expiresIn: '1h' } }),
-      ],
-      controllers: [FieldsController],
-      providers: [
-        FieldsService,
-        FarmsService,
-        JwtStrategy,
-        JwtAuthGuard,
-        RolesGuard,
-        { provide: getRepositoryToken(Field), useValue: createFakeRepository<Field>() },
-        {
-          provide: getRepositoryToken(Farm),
-          useValue: createFakeRepository<Farm>([{ id: 1, name: 'Finca Test', location: 'Loc' } as any]),
-        },
-        { provide: getRepositoryToken(ProductionCycle), useValue: cycleRepo },
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-    await app.init();
+  beforeAll(async () => {
+    app = await createTestApp();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await cleanDatabase(app);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 
+  async function createFarm(name = 'Finca Test'): Promise<number> {
+    const res = await request(app.getHttpServer())
+      .post('/farms')
+      .set('Authorization', authHeader('admin'))
+      .send({ name, location: 'Test Location' })
+      .expect(201);
+    return res.body.id;
+  }
+
   it('should reject creation from an operador (403)', async () => {
+    const farmId = await createFarm();
     await request(app.getHttpServer())
       .post('/fields')
       .set('Authorization', authHeader('operador'))
-      .send({ farmId: 1, name: 'Lote 1', area: 5.5 })
+      .send({ farmId, name: 'Lote 1', area: 5.5 })
       .expect(403);
   });
 
   it('should create a field for an existing farm', async () => {
+    const farmId = await createFarm();
     const response = await request(app.getHttpServer())
       .post('/fields')
       .set('Authorization', authHeader('gerente'))
-      .send({ farmId: 1, name: 'Lote 1', area: 5.5 })
+      .send({ farmId, name: 'Lote 1', area: 5.5 })
       .expect(201);
 
     expect(response.body.name).toBe('Lote 1');
@@ -81,26 +56,49 @@ describe('FieldsController (e2e)', () => {
   });
 
   it('should reject an area change with 409 while an open cycle exists', async () => {
-    const created = await request(app.getHttpServer())
+    const farmId = await createFarm();
+
+    // Create field
+    const fieldRes = await request(app.getHttpServer())
       .post('/fields')
       .set('Authorization', authHeader('admin'))
-      .send({ farmId: 1, name: 'Lote Con Ciclo', area: 5 })
+      .send({ farmId, name: 'Lote Con Ciclo', area: 5 })
       .expect(201);
 
-    await cycleRepo.save({ fieldId: created.body.id, status: 'OPEN' } as any);
+    // Create a crop
+    const cropRes = await request(app.getHttpServer())
+      .post('/crops')
+      .set('Authorization', authHeader('admin'))
+      .send({ type: 'Coffee', variety: 'Arabica' })
+      .expect(201);
 
+    // Open a production cycle for this field
     await request(app.getHttpServer())
-      .patch(`/fields/${created.body.id}`)
+      .post('/production-cycle')
+      .set('Authorization', authHeader('admin'))
+      .send({
+        fieldId: fieldRes.body.id,
+        cropId: cropRes.body.id,
+        sowingDate: '2026-01-15',
+        expectedHarvestDate: '2026-06-15',
+        estimatedYield: 30,
+      })
+      .expect(201);
+
+    // Try to change area — should be rejected
+    await request(app.getHttpServer())
+      .patch(`/fields/${fieldRes.body.id}`)
       .set('Authorization', authHeader('admin'))
       .send({ area: 10 })
       .expect(409);
   });
 
   it('should allow gerente to delete a field', async () => {
+    const farmId = await createFarm();
     const created = await request(app.getHttpServer())
       .post('/fields')
       .set('Authorization', authHeader('admin'))
-      .send({ farmId: 1, name: 'Lote a Eliminar', area: 3 })
+      .send({ farmId, name: 'Lote a Eliminar', area: 3 })
       .expect(201);
 
     await request(app.getHttpServer())
