@@ -2,12 +2,12 @@ import { IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCropDto {
-  @ApiProperty({ example: 'Café', description: 'Tipo de cultivo' })
+  @ApiProperty({ example: 'Coffee', description: 'Crop type' })
   @IsString()
   @IsNotEmpty()
   type: string;
 
-  @ApiProperty({ example: 'Arábica', description: 'Variedad del cultivo' })
+  @ApiProperty({ example: 'Arabica', description: 'Crop variety' })
   @IsString()
   @IsNotEmpty()
   variety: string;

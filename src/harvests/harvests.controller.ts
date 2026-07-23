@@ -47,7 +47,7 @@ export class HarvestsController {
 
   @Get()
   @ApiOperation({ summary: 'List all harvests (optionally filter by cycle)' })
-  @ApiQuery({ name: 'cycleId', required: false, type: Number, description: 'Filtrar cosechas por ID de ciclo productivo' })
+  @ApiQuery({ name: 'cycleId', required: false, type: Number, description: 'Filter harvests by production cycle ID' })
   @ApiResponse({ status: 200, description: 'List of harvests retrieved' })
   findAll(@Query('cycleId') cycleId?: string) {
     if (cycleId) {

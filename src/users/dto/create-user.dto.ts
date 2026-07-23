@@ -2,11 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'nuevo.gerente@strata.com', description: 'Correo electrónico del nuevo usuario' })
+  @ApiProperty({ example: 'new.manager@strata.com', description: 'New user email address' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'Password123!', description: 'Contraseña (mínimo 6 caracteres)' })
+  @ApiProperty({ example: 'Password123!', description: 'Password (minimum 6 characters)' })
   @IsNotEmpty()
   @IsString()
   @MinLength(6)
@@ -16,7 +16,7 @@ export class CreateUserDto {
     example: 'operador',
     required: false,
     enum: ['admin', 'gerente', 'operador', 'auditor'],
-    description: 'Rol del usuario. Si no se especifica, se asigna "operador" por defecto.',
+    description: 'User role. If not specified, defaults to "operador".',
   })
   @IsOptional()
   @IsString()

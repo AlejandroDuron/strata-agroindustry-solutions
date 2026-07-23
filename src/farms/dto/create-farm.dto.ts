@@ -2,7 +2,7 @@ import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFarmDto {
-  @ApiProperty({ example: 'Finca El Roble' })
+  @ApiProperty({ example: 'El Roble Farm' })
   @IsNotEmpty({ message: 'Farm name is required' })
   @IsString()
   @MaxLength(100, { message: 'Name cannot exceed 100 characters' })

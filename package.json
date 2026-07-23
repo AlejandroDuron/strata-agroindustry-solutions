@@ -80,7 +80,13 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/main.ts",
+      "!**/database/factories/**",
+      "!**/database/seeds/**",
+      "!**/database/bootstrap.ts",
+      "!**/database/seed.ts",
+      "!**/*.module.ts"
     ],
     "coverageDirectory": "../coverage",
     "coverageThreshold": {

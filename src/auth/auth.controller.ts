@@ -12,11 +12,11 @@ export class AuthController {
   @Post('register')
   @ApiOperation({
     summary: 'Register a new user account',
-    description: 'Registra un nuevo usuario con rol "operador". Para asignar otros roles (admin, gerente, auditor) usa el endpoint POST /users como admin.',
+    description: 'Registers a new user with the "operador" role. To assign other roles (admin, gerente, auditor) use the POST /users endpoint as admin.',
   })
-  @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente con rol operador' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 409, description: 'El email ya está registrado' })
+  @ApiResponse({ status: 201, description: 'User registered successfully with operador role' })
+  @ApiResponse({ status: 400, description: 'Invalid data' })
+  @ApiResponse({ status: 409, description: 'Email is already registered' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register({
       email: registerDto.email,

@@ -27,7 +27,8 @@ export class Field {
   @Column({ length: 100 })
   name: string;
 
-  @Column('float')
+  /** Field area in manzanas */
+  @Column('float', { comment: 'Area in manzanas' })
   area: number;
 
   @DeleteDateColumn()

@@ -20,7 +20,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Strata Agroindustry API')
-    .setDescription('API de gestión agrícola con autenticación y usuarios')
+    .setDescription('Agricultural management API with authentication and users')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

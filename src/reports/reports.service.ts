@@ -13,7 +13,7 @@ export class ReportsService {
 
   async getYieldHistory(filter: GetReportsFilterDto) {
     if (!filter.fieldId) {
-      throw new BadRequestException('El parámetro fieldId es obligatorio para consultar el histórico de rendimiento.');
+      throw new BadRequestException('The fieldId parameter is required to query yield history.');
     }
 
     const cycles = await this.productionCycleRepo.find({
@@ -30,7 +30,7 @@ export class ReportsService {
     });
 
     if (cycles.length === 0) {
-      throw new NotFoundException(`No se encontraron ciclos productivos cerrados para el lote (field) ID ${filter.fieldId}.`);
+      throw new NotFoundException(`No closed production cycles found for field ID ${filter.fieldId}.`);
     }
 
     const history = cycles.map((cycle) => {
@@ -52,7 +52,7 @@ export class ReportsService {
 
       return {
         cycleId: cycle.id,
-        crop: (cycle.crop as any)?.variety || (cycle.crop as any)?.type || (cycle.crop as any)?.name || 'Desconocido',
+        crop: (cycle.crop as any)?.variety || (cycle.crop as any)?.type || (cycle.crop as any)?.name || 'Unknown',
         sowingDate: cycle.sowingDate,
         expectedHarvestDate: cycle.expectedHarvestDate,
         estimatedYield,
@@ -70,13 +70,13 @@ export class ReportsService {
 
     return {
       fieldId: filter.fieldId,
-      fieldName: (cycles[0].field as any)?.name || `Lote #${filter.fieldId}`,
+      fieldName: (cycles[0].field as any)?.name || `Field #${filter.fieldId}`,
       fieldArea: (cycles[0].field as any)?.area || 'N/A',
       historicalAverageYield: historicalAverage,
       isYieldAlertTriggered,
       alertMessage: isYieldAlertTriggered
-        ? `¡ALERTA DE NEGOCIO! El rendimiento del último ciclo (${latestCycle.realYield}) cayó más de un 20% por debajo del promedio histórico del lote (${historicalAverage}).`
-        : 'Rendimiento óptimo: El último ciclo se encuentra dentro de los parámetros históricos normales.',
+        ? `BUSINESS ALERT! The latest cycle yield (${latestCycle.realYield}) dropped more than 20% below the field's historical average (${historicalAverage}).`
+        : 'Optimal yield: The latest cycle is within normal historical parameters.',
       history,
     };
   }
@@ -124,7 +124,7 @@ export class ReportsService {
 
       return {
         cycleId: cycle.id,
-        field: (cycle.field as any)?.name || `Lote #${cycle.fieldId}`,
+        field: (cycle.field as any)?.name || `Field #${cycle.fieldId}`,
         crop: (cycle.crop as any)?.variety || (cycle.crop as any)?.type || (cycle.crop as any)?.name || 'N/A',
         sowingDate: cycle.sowingDate,
         revenue: Number(revenue.toFixed(2)),

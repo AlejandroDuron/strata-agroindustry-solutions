@@ -6,7 +6,7 @@ export function createProductionCycle(
   return {
     sowingDate: '2026-01-15',
     expectedHarvestDate: '2026-06-15',
-    estimatedYield: 25 + Math.random() * 20, // 25-45 qq/manzana
+    estimatedYield: parseFloat((25 + Math.random() * 20).toFixed(2)), // 25-45 qq/manzana
     currentCostPerArea: 0,
     status: 'OPEN',
     ...overrides,

@@ -20,7 +20,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"admin\"\n}"
+              "raw": "{\n  \"email\": \"admin@strata.com\",\n  \"password\": \"Admin123!\",\n  \"role\": \"admin\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/auth/register",
@@ -57,7 +57,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"admin@strata.com\",\n  \"password\": \"Admin123!\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/auth/login",
@@ -102,7 +102,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"operador@example.com\",\n  \"password\": \"strongPassword123\",\n  \"role\": \"operador\"\n}"
+              "raw": "{\n  \"email\": \"nuevo.usuario@strata.com\",\n  \"password\": \"NuevoUser123!\",\n  \"role\": \"operador\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/users",
@@ -156,7 +156,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"gerente\"\n}"
+              "raw": "{\n  \"role\": \"auditor\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/users/1",
@@ -199,7 +199,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Finca El Roble\",\n  \"location\": \"Santa Ana, El Salvador\"\n}"
+              "raw": "{\n  \"name\": \"Finca La Aurora\",\n  \"location\": \"Chalatenango, El Salvador\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/farms",
@@ -252,7 +252,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"location\": \"Ahuachapán, El Salvador\"\n}"
+              "raw": "{\n  \"location\": \"San Miguel, El Salvador\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/farms/1",
@@ -294,7 +294,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"farmId\": 1,\n  \"name\": \"Lote La Ceiba\",\n  \"area\": 5.5\n}"
+              "raw": "{\n  \"farmId\": 1,\n  \"name\": \"Lote El Manantial\",\n  \"area\": 4.2\n}"
             },
             "url": {
               "raw": "http://localhost:3000/fields",
@@ -350,7 +350,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"area\": 6.0\n}"
+              "raw": "{\n  \"area\": 7.3\n}"
             },
             "url": {
               "raw": "http://localhost:3000/fields/1",
@@ -392,7 +392,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"Café\",\n  \"variety\": \"Bourbon\"\n}"
+              "raw": "{\n  \"type\": \"Arroz\",\n  \"variety\": \"CENTA A-8\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/crops",
@@ -445,7 +445,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"variety\": \"Pacamara\"\n}"
+              "raw": "{\n  \"variety\": \"CENTA A-10\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/crops/1",
@@ -487,7 +487,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fieldId\": 1,\n  \"cropId\": 1,\n  \"sowingDate\": \"2026-01-15\",\n  \"expectedHarvestDate\": \"2026-06-15\",\n  \"estimatedYield\": 30\n}"
+              "raw": "{\n  \"fieldId\": 1,\n  \"cropId\": 1,\n  \"sowingDate\": \"2026-03-01\",\n  \"expectedHarvestDate\": \"2026-09-15\",\n  \"estimatedYield\": 42\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycle",
@@ -542,7 +542,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estimatedYield\": 35\n}"
+              "raw": "{\n  \"estimatedYield\": 48\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycle/1",
@@ -608,7 +608,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Urea 46%\",\n  \"type\": \"FERTILIZER\",\n  \"quantity\": 10.5,\n  \"unitCost\": 15.0,\n  \"unit\": \"kg\",\n  \"applicationDate\": \"2026-07-21\",\n  \"notes\": \"Morning foliar application\"\n}"
+              "raw": "{\n  \"name\": \"Sulfato de Amonio\",\n  \"type\": \"FERTILIZER\",\n  \"quantity\": 8.0,\n  \"unitCost\": 22.5,\n  \"unit\": \"kg\",\n  \"applicationDate\": \"2026-04-10\",\n  \"notes\": \"Aplicación basal en surcos\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/inputs",
@@ -674,7 +674,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"quantity\": 15.0,\n  \"notes\": \"Quantity corrected by agronomist\"\n}"
+              "raw": "{\n  \"quantity\": 12.0,\n  \"notes\": \"Ajuste de dosis por recomendación técnica\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/inputs/1",
@@ -721,7 +721,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cycleId\": 2,\n  \"quantityObtained\": 25.5,\n  \"quality\": \"A\",\n  \"unitSalePrice\": 120.0,\n  \"quantitySold\": 22.0\n}"
+              "raw": "{\n  \"cycleId\": 2,\n  \"quantityObtained\": 18.75,\n  \"quality\": \"B\",\n  \"unitSalePrice\": 95.0,\n  \"quantitySold\": 16.5\n}"
             },
             "url": {
               "raw": "http://localhost:3000/harvests",
@@ -776,7 +776,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"quantitySold\": 24.0\n}"
+              "raw": "{\n  \"quantitySold\": 17.0\n}"
             },
             "url": {
               "raw": "http://localhost:3000/harvests/1",
@@ -824,7 +824,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eventType\": \"IRRIGATION\",\n  \"eventDate\": \"2026-07-21\",\n  \"description\": \"Morning drip irrigation north sector\",\n  \"severity\": \"LOW\"\n}"
+              "raw": "{\n  \"eventType\": \"FUMIGATION\",\n  \"eventDate\": \"2026-04-15\",\n  \"description\": \"Fumigación preventiva contra mosca blanca\",\n  \"severity\": \"MEDIUM\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/events",
@@ -889,7 +889,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"description\": \"Morning irrigation extended to 3 hours\",\n  \"resolvedAt\": \"2026-07-22\"\n}"
+              "raw": "{\n  \"description\": \"Fumigación completada con éxito, plaga controlada\",\n  \"resolvedAt\": \"2026-04-18\"\n}"
             },
             "url": {
               "raw": "http://localhost:3000/production-cycles/2/events/1",
